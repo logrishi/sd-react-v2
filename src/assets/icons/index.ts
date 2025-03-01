@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement } from "lib/vendors";
 
 // This file centralizes all icon imports
 // You can import icons from libraries like heroicons, etc.

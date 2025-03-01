@@ -1,5 +1,4 @@
-import { router } from "../../lib/vendors";
-import type { NavigateOptions as RouterNavigateOptions } from "@tanstack/react-router";
+import { router, type NavigateOptions as RouterNavigateOptions } from "lib/vendors";
 
 interface NavigateOptions {
   state?: Record<string, unknown>;

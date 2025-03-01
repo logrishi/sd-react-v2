@@ -1,12 +1,65 @@
 ---
-description: Always follow this folder structure. if any confusion ask me before writing/editing
-globs: 
-alwaysApply: true
+description:
+globs:
 ---
+
 # Your rule content
 
-[SETUP.md](mdc:SETUP.md)
+- You can @ files here
+- You can use markdown but dont have to
 
-- Always follow this folder structure
-- If any confusion ask me before writing/editing
+# Project Configuration Rules
 
+## Core Technologies
+- @vite.config.ts - Vite + React setup with TypeScript
+- @tailwind.config.js - TailwindCSS v3 configuration
+- @src/assets/styles/globals.css - Global styles
+
+## State Management
+- @src/store/states.ts - Zustand global state definitions
+- Uses TanStack Query for server state management
+
+## Routing
+- @src/router.ts - TanStack Router configuration
+- Feature-based file routing in features directory
+
+## Project Structure
+Features-based architecture:
+```
+src/
+├── assets/                  # Static assets
+├── components/             # Shared components
+├── features/              # Feature modules
+│   ├── components/       # Feature components
+│   ├── hooks/           # Feature hooks
+│   ├── services/        # Feature APIs
+│   ├── store/          # Feature state
+│   └── routes/         # Feature routes
+├── hooks/               # Global hooks
+├── lib/                # External configs
+├── services/           # Global APIs
+├── store/              # Global state
+├── types/              # TS types
+└── utils/              # Utilities
+```
+
+## UI and Animations
+- HeroUI components (@https://www.heroui.com)
+- Framer Motion for animations
+- Rombo Animation (@https://rombo.co/tailwind)
+
+## API Integration
+- @src/services/backend/actions.ts - API methods
+- Axios for HTTP requests
+- Type-safe API calls
+
+## Development
+- TypeScript with strict mode
+- ESLint + Prettier
+- Pre-commit hooks
+
+## Environment
+Required env variables:
+```
+VITE_API_URL=your_api_url
+```
