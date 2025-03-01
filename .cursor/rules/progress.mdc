@@ -1,0 +1,13 @@
+---
+description: always document what steps you have taken. keep a track of what is implemented and what needs to be done.
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+[PROGRESS.md](mdc:PROGRESS.md)
+
+- always document what steps you have taken
+- keep a track of what is implemented and what needs to be done
+- don't overwrite old steps in this file, instead keep adding to this file so it is easy to trace or backtrack when required

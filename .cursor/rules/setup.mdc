@@ -1,0 +1,12 @@
+---
+description: Always follow this folder structure. if any confusion ask me before writing/editing
+globs: 
+alwaysApply: true
+---
+# Your rule content
+
+[SETUP.md](mdc:SETUP.md)
+
+- Always follow this folder structure
+- If any confusion ask me before writing/editing
+
