@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@heroui/button": "^2.2.15",
     "@heroui/react": "^2.7.4",
     "@heroui/system": "^2.4.11",
     "@heroui/theme": "^2.4.11",
@@ -18,10 +19,15 @@
     "axios": "^1.8.1",
     "bcryptjs": "^3.0.2",
     "browser-image-compression": "^2.0.2",
+    "dayjs": "^1.11.13",
     "framer-motion": "^12.4.7",
+    "lucide-react": "^0.477.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-error-boundary": "^5.0.0",
+    "react-router": "^7.2.0",
+    "react-router-dom": "^7.2.0",
+    "vite-tsconfig-paths": "^5.1.4",
     "zod": "^3.24.2",
     "zustand": "^5.0.3"
   },

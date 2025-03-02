@@ -1,0 +1,32 @@
+import { type FC } from "@/lib/vendors";
+import { BottomTabs } from "./bottom-tabs";
+import { Sidebar } from "./sidebar";
+import { NavigationItem } from "@/lib/config/navigation.config";
+
+interface NavigationProps {
+  config: NavigationItem[];
+  variant?: "left" | "right" | "bottom";
+  activePath?: string;
+  onNavigate?: (path: string) => void;
+}
+
+const Navigation: FC<NavigationProps> = ({ config, variant = "left", activePath, onNavigate }) => {
+  const props = { config, activePath, onNavigate };
+
+  switch (variant) {
+    case "left":
+      return <Sidebar {...props} orientation="left" />;
+    case "right":
+      return <Sidebar {...props} orientation="right" />;
+    case "bottom":
+      return <BottomTabs {...props} />;
+    default:
+      return null;
+  }
+};
+
+// Export the Navigation component as default
+export default Navigation;
+
+// Export individual components for direct use
+export { Navigation, BottomTabs, Sidebar };

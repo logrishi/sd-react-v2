@@ -1,5 +1,8 @@
+import { RouterProvider } from "@/lib/vendors";
+import { router } from "./services/router";
+
 function App() {
-  return <>hola</>;
+  return <RouterProvider router={router} />;
 }
 
 export default App;

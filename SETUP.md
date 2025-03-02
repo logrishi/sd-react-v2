@@ -58,7 +58,7 @@ The project is bootstrapped with Vite, providing:
 
 ## Routing
 
-### TanStack Router
+### React Router
 
 - Type-safe routing solution
 - File-based routing in features directory

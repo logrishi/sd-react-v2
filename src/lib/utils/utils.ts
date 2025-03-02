@@ -1,4 +1,4 @@
-import { bcrypt, clsx, twMerge, type ClassValue } from "lib/vendors";
+import { bcrypt, clsx, twMerge, type ClassValue } from "@/lib/vendors";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

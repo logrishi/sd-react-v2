@@ -1,8 +1,8 @@
 import Api from "./api";
 import axios from "axios";
-import { compressImage } from "../../utils/image-compression";
-import { formatBookData } from "../../utils/text-utils";
-import { hashPassword } from "../../utils/utils";
+import { compressImage } from "../../lib/utils/image-compression";
+import { formatBookData } from "../../lib/utils/text-utils";
+import { hashPassword } from "../../lib/utils/utils";
 
 // Debug utility
 const debug = {
