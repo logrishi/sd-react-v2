@@ -1,4 +1,5 @@
-import { AxiosError, AxiosRequestConfig, AxiosResponse, CancelTokenSource, axios } from "@/lib/vendors";
+import { axios, AxiosError, type AxiosRequestConfig, type AxiosResponse, type CancelTokenSource } from "@/lib/vendors";
+import { clearCache, getCache, getCacheKey, setCache } from "./cache";
 
 import tokens from "./tokens.json";
 
@@ -47,6 +48,7 @@ interface RequestOptions {
   retries?: number;
   cancelToken?: CancelTokenSource;
   timeout?: number;
+  cacheDuration?: number;
 }
 
 // Create axios instance with default config
@@ -68,16 +70,16 @@ declare module "axios" {
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    console.debug("Request:", {
-      method: config.method,
-      url: config.url,
-      params: config.params,
-      headers: config.headers,
-    });
+    // console.debug("Request:", {
+    //   method: config.method,
+    //   url: config.url,
+    //   params: config.params,
+    //   headers: config.headers,
+    // });
     return config;
   },
   (error) => {
-    console.error("Request Error:", error);
+    // console.error("Request Error:", error);
     return Promise.reject(error);
   }
 );
@@ -85,10 +87,10 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.debug("Response:", {
-      status: response.status,
-      data: response.data,
-    });
+    // console.debug("Response:", {
+    //   status: response.status,
+    //   data: response.data,
+    // });
     return response;
   },
   async (error: AxiosError) => {
@@ -110,11 +112,11 @@ axiosInstance.interceptors.response.use(
       return axiosInstance(originalRequest);
     }
 
-    console.error("Response Error:", {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
-    });
+    // console.error("Response Error:", {
+    //   status: error.response?.status,
+    //   data: error.response?.data,
+    //   message: error.message,
+    // });
 
     return Promise.reject(error);
   }
@@ -147,6 +149,7 @@ async function buildRequestKey(method: HttpMethod, url: string, options: Request
   const _url = FQ_LOCAL_URL + url;
   const parsed_url = new URL(_url);
   const pathname = "/" + parsed_url.pathname.split("/")[1];
+
   const methodLower = method.toLowerCase();
 
   // Only include non-empty parameters
@@ -253,22 +256,51 @@ async function buildRequestConfig(
   };
 }
 
-// Main request handler with error handling and loading state
+// Function to clear cache for a specific resource
+export function clearResourceCache(resourceName: string): void {
+  // Clear all cache entries related to this resource
+  clearCache(`^(get|post|put|patch|delete):/${resourceName}`);
+}
+
+// Main request handler with caching
 async function makeRequest<T = any>(method: HttpMethod, endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { loading = true } = options;
+  const { loading = true, cacheDuration } = options;
 
   try {
     if (loading) {
-      console.log(`${method.toUpperCase()} Request Started: ${endpoint}`);
+      // console.log(`${method.toUpperCase()} Request Started: ${endpoint}`);
+    }
+
+    const resourceName = endpoint.split("/")[1]; // Get resource name from endpoint
+
+    // Cache GET requests
+    if (method.toLowerCase() === "get") {
+      const cacheKey = getCacheKey(method, endpoint, options);
+      const cachedData = getCache<T>(cacheKey);
+
+      if (cachedData) {
+        return cachedData;
+      }
     }
 
     const config = await buildRequestConfig(method, endpoint, options);
-    const response: AxiosResponse = await axiosInstance(config);
+    const response = await axiosInstance.request(config);
 
-    return response.data; // Return the raw response data
+    // Cache successful GET responses
+    if (method.toLowerCase() === "get" && response.status === 200) {
+      const cacheKey = getCacheKey(method, endpoint, options);
+      setCache(cacheKey, response.data, cacheDuration);
+    }
+
+    // Clear related caches for write operations
+    if (["post", "put", "patch", "delete"].includes(method.toLowerCase())) {
+      clearResourceCache(resourceName);
+    }
+
+    return response.data;
   } catch (error) {
     if (axios.isCancel(error)) {
-      console.log("Request canceled:", error.message);
+      // console.log("Request canceled:", error.message);
       throw error;
     }
 
@@ -278,11 +310,11 @@ async function makeRequest<T = any>(method: HttpMethod, endpoint: string, option
       code: (error as AxiosError)?.code,
     };
 
-    console.error(`${method.toUpperCase()} Error:`, apiError);
+    // console.error(`${method.toUpperCase()} Error:`, apiError);
     throw apiError;
   } finally {
     if (loading) {
-      console.log(`${method.toUpperCase()} Request Completed: ${endpoint}`);
+      // console.log(`${method.toUpperCase()} Request Completed: ${endpoint}`);
     }
   }
 }
