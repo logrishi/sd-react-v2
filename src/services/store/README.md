@@ -102,7 +102,7 @@ store.cart.set({
 
 ### 1. State Organization
 
-- Keep state definitions in `states.ts`
+- Keep state definitions in `src/store.ts`
 - Group related state in a single slice
 - Use TypeScript for better type inference
 

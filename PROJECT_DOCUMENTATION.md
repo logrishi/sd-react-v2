@@ -1,6 +1,85 @@
-# Project Setup and Configuration
+# Saraighat Digital Workspace
+
+A modern React application built with Vite and TypeScript, featuring a feature-based architecture and modern tooling.
+
+## Table of Contents
+
+1. [Project Overview](#project-overview)
+2. [Project Structure](#project-structure)
+3. [Getting Started](#getting-started)
+4. [Core Setup](#core-setup)
+5. [State Management](#state-management)
+   - [Global State (Zustand)](#global-state-zustand)
+   - [Server State (TanStack Query)](#server-state-tanstack-query)
+6. [Form Validation](#form-validation)
+7. [Routing](#routing)
+8. [Assets](#assets)
+9. [UI Components](#ui-components)
+10. [Animation Libraries](#animation-libraries)
+11. [API Integration](#api-integration)
+12. [Import Rules](#import-rules)
+13. [TypeScript Guidelines](#typescript-guidelines)
+14. [Development Tools](#development-tools)
+15. [Environment Variables](#environment-variables)
+16. [Additional Configuration](#additional-configuration)
+17. [Navigation Utility](#navigation-utility)
+18. [Absolute Imports Setup](#absolute-imports-setup)
+
+## Project Overview
 
 This document outlines the technical setup and configuration details of the project.
+
+## Project Structure
+
+The project follows a feature-based folder structure for better scalability and maintainability:
+
+```
+src/
+├── assets/                  # Static assets (images, fonts, global styles)
+│   ├── fonts/              # Font files
+│   ├── images/             # Image files
+│   └── styles/             # Global styles
+│       └── globals.css     # Global CSS file
+├── components/             # Shared, app-wide components
+│   ├── common/            # Reusable UI elements
+│   └── layout/            # Layout components
+│   └── navigation/        # Navigation components
+├── features/              # Feature-based modules
+│   ├── home/              # Feature-specific component
+│   ├── about/             # Feature-specific components
+├── hooks/                 # Global custom hooks
+├── lib/                   # External library configurations
+│   ├── config/            # Configuration files
+│   ├── utils/             # Utility functions
+│   └── vendors/           # Vendor libraries
+├── services/              # Global API services
+│   ├── backend/           # Backend services
+│   ├── router/            # Routing services
+│   └── store/             # Global state management
+├── types/                 # TypeScript type definitions
+├── routes.ts              # Main routing file
+└── store.ts               # Main state management file
+```
+
+## Getting Started
+
+1. Install dependencies:
+
+```bash
+bun install
+```
+
+2. Start the development server:
+
+```bash
+bun dev
+```
+
+3. Build for production:
+
+```bash
+bun run build
+```
 
 ## Core Setup
 
@@ -21,14 +100,14 @@ The project is bootstrapped with Vite, providing:
 
 ## State Management
 
-### Zustand
+### Global State (Zustand)
 
 - Global state management solution
-- State definitions located in `src/store/states.ts`
+- State definitions located in `src/store.ts`
 - Provides simple and scalable state management
 - Integrated with React DevTools
-- **All component states must be defined in the store folder, not in individual components**
-- **Always follow the object-based state format defined in states.ts:**
+- **All component states must be defined in `src/store.ts` file, not in individual components**
+- **Always follow the object-based state format defined in store.ts:**
   ```typescript
   export const store = {
     auth: {
@@ -40,7 +119,7 @@ The project is bootstrapped with Vite, providing:
   };
   ```
 
-### TanStack Query
+### Server State (TanStack Query)
 
 - Handles server state management
 - Configured for data fetching and caching
@@ -60,11 +139,17 @@ The project is bootstrapped with Vite, providing:
 
 ### React Router
 
-- Type-safe routing solution
-- File-based routing in features directory
-- Supports nested layouts
-- Handles dynamic routes
-- Configuration in `src/router.ts`
+- Configuration in `src/routes.ts`
+- The project includes a simple navigation utility that works with React Router, allowing for easy navigation both inside and outside of React functional components.
+
+## Assets
+
+### Asset Structure
+
+- Static assets are organized in `src/assets/`:
+  - `fonts/`: Font files
+  - `images/`: Image files
+  - `styles/`: Global styles, including `globals.css`
 
 ## UI Components
 
@@ -149,7 +234,7 @@ For specific configuration needs:
 
 ### Overview
 
-The project includes a simple navigation utility that works with TanStack Router, allowing for easy navigation both inside and outside of React functional components.
+The project includes a simple navigation utility that works with React Router, allowing for easy navigation both inside and outside of React functional components.
 
 ### Usage
 
@@ -171,8 +256,7 @@ You can use the `navigateTo` function directly in services or utilities for navi
 - `state`: State to pass to the next route.
 - `replace`: Replace current history entry instead of pushing.
 - `params`: URL parameters to replace in the path.
-- `search`: Search/query parameters.
-- `hash`: URL hash.
+- `scrollToTop`: Enables scroll to top.
 
 ## Absolute Imports Setup
 
@@ -183,23 +267,14 @@ To enable absolute imports in the project, the following configuration has been 
 ```json
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    // "baseUrl": "src",
+    // "paths": {
+    //   "*": ["*"]
+    // }
+    "baseUrl": ".",
     "paths": {
-      "*": ["*"]
+      "@/*": ["./src/*"]
     }
-  },
-  "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+  }
 }
 ```
-
-### Usage
-
-After setting up absolute imports, you can import modules using paths relative to the `src` directory. For example:
-
-```typescript
-import { useNavigateTo } from "utils/navigation/navigate";
-import { store } from "store/states";
-```
-
-This eliminates the need for complex relative paths, making your imports cleaner and easier to manage.
