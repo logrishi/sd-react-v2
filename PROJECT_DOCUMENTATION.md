@@ -5,29 +5,34 @@ A modern React application built with Vite and TypeScript, featuring a feature-b
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
-2. [Project Structure](#project-structure)
-3. [Getting Started](#getting-started)
-4. [Core Setup](#core-setup)
-5. [State Management](#state-management)
+2. [Progress Documentation](#progress-documentation)
+3. [Project Structure](#project-structure)
+4. [Getting Started](#getting-started)
+5. [Core Setup](#core-setup)
+6. [State Management](#state-management)
    - [Global State (Zustand)](#global-state-zustand)
    - [Server State (TanStack Query)](#server-state-tanstack-query)
-6. [Form Validation](#form-validation)
-7. [Routing](#routing)
-8. [Assets](#assets)
-9. [UI Components](#ui-components)
-10. [Animation Libraries](#animation-libraries)
-11. [API Integration](#api-integration)
-12. [Import Rules](#import-rules)
-13. [TypeScript Guidelines](#typescript-guidelines)
-14. [Development Tools](#development-tools)
-15. [Environment Variables](#environment-variables)
-16. [Additional Configuration](#additional-configuration)
-17. [Navigation Utility](#navigation-utility)
-18. [Absolute Imports Setup](#absolute-imports-setup)
+7. [Form Validation](#form-validation)
+8. [Routing](#routing)
+9. [Assets](#assets)
+10. [UI Components](#ui-components)
+11. [Animation Libraries](#animation-libraries)
+12. [API Integration](#api-integration)
+13. [Import Rules](#import-rules)
+14. [TypeScript Guidelines](#typescript-guidelines)
+15. [Development Tools](#development-tools)
+16. [Environment Variables](#environment-variables)
+17. [Additional Configuration](#additional-configuration)
+18. [Navigation Utility](#navigation-utility)
+19. [Absolute Imports Setup](#absolute-imports-setup)
 
 ## Project Overview
 
 This document outlines the technical setup and configuration details of the project.
+
+### Progress Documentation
+
+- Document every step taken or completed in the `PROGRESS.md` file to maintain a comprehensive and clear history of all changes and updates made to the project.
 
 ## Project Structure
 
