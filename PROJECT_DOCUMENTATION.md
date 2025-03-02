@@ -185,6 +185,7 @@ The project is bootstrapped with Vite, providing:
 
 ## Import Rules
 
+- **All imports must use absolute paths with the `@/` alias (e.g., `import { something } from "@/store"`)**
 - **All 3rd party packages imports must come from vendors folder in `src/lib/vendors`**
 - **All UI components must be imported from their dedicated files**
 - **All icons must be imported from `src/assets/icons/index.ts`**
@@ -260,7 +261,7 @@ You can use the `navigateTo` function directly in services or utilities for navi
 
 ## Absolute Imports Setup
 
-To enable absolute imports in the project, the following configuration has been added to the `tsconfig.json` file:
+To enable absolute imports in the project, the following configuration has been added to the `tsconfig.json` file. **This setup must be used consistently across all files in the project**:
 
 ### tsconfig.json Configuration
 

@@ -1,5 +1,5 @@
 // Get state definition type
-type StateDefinition = typeof import("../../store").store;
+type StateDefinition = typeof import("@/store").store;
 
 // Helper type to extract state type without persist
 export type ExtractState<T> = T extends { persist: unknown } ? Omit<T, "persist"> : T;

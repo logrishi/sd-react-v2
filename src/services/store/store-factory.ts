@@ -1,6 +1,6 @@
 import { Store, StoreFactory } from "./types";
 
-import { store as stateDefinition } from "../../store";
+import { store as stateDefinition } from "@/store";
 
 // Create store instance using provided factory
 export function createStore(factory: StoreFactory): Store {

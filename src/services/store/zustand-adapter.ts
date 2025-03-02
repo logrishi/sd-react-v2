@@ -1,7 +1,7 @@
 import { ExtractState, StoreAdapter, StoreFactory } from "./types";
 
 import { create } from "zustand";
-import { store as stateDefinition } from "../../store";
+import { store as stateDefinition } from "@/store";
 
 // Create Zustand implementation of our store factory
 export function createZustandFactory(storage: Storage = localStorage): StoreFactory {
