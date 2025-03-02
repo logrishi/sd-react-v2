@@ -34,3 +34,7 @@ export { twMerge } from "tailwind-merge";
 export { type ClassValue } from "clsx";
 
 export { clsx } from "clsx";
+
+export { default as axios } from "axios";
+
+export { AxiosError, type AxiosRequestConfig, type AxiosResponse, type CancelTokenSource } from "axios";

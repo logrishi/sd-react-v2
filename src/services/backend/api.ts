@@ -1,5 +1,5 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, CancelTokenSource } from "axios";
-import { clearCache, getCache, getCacheKey, setCache } from "./cache"; // Import cache functions
+import { axios, AxiosError, type AxiosRequestConfig, type AxiosResponse, type CancelTokenSource } from "@/lib/vendors";
+import { clearCache, getCache, getCacheKey, setCache } from "./cache";
 
 import tokens from "./tokens.json";
 
@@ -30,8 +30,9 @@ const typedTokens: Tokens = tokens as Tokens;
 type HttpMethod = "get" | "post" | "put" | "delete" | "patch" | "sql";
 
 interface RequestOptions {
+  [key: string]: any;
   loading?: boolean;
-  body?: unknown;
+  body?: any;
   key?: Record<string, string | any>;
   page?: number | string;
   sort?: string;
@@ -131,7 +132,7 @@ async function hashString(input: string): Promise<string> {
 }
 
 // Helper to build query string for SQL operations
-function buildSQLQuery(body: unknown): string {
+function buildSQLQuery(body: any): string {
   if (!body) return "";
 
   if (Array.isArray(body)) {
@@ -149,20 +150,31 @@ async function buildRequestKey(method: HttpMethod, url: string, options: Request
   const parsed_url = new URL(_url);
   const pathname = "/" + parsed_url.pathname.split("/")[1];
 
-  const requestParams = {
-    method,
-    pathname,
-    fields: options.fields,
-    hidden: options.hidden,
-    filter: options.filter,
-    nearby: options.nearby,
-    collections: options.joins,
-    permissions: options.permissions,
-    validation: options.validation,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  };
+  const methodLower = method.toLowerCase();
 
-  return `${method}:${pathname}>${await hashString(JSON.stringify(requestParams))}`;
+  // Only include non-empty parameters
+  const requestParams: Record<string, any> = {
+    method: methodLower,
+    pathname,
+    fields: options.fields || undefined,
+    hidden: options.hidden || undefined,
+    filter: options.filter || undefined,
+    nearby: options.nearby || undefined,
+    collections: options.joins || undefined,
+    permissions: options.permissions || undefined,
+    validation: options.validation || undefined,
+    search: options.search || undefined,
+    sort: options.sort || undefined,
+    page: options.page || undefined,
+    // Only include body for GET, DELETE, PATCH requests
+    ...(!["post", "put", "sql"].includes(methodLower) && {
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    }),
+  };
+  // Remove undefined values to keep the key consistent
+  Object.keys(requestParams).forEach((key) => requestParams[key] === undefined && delete requestParams[key]);
+
+  return `${methodLower}:${pathname}>${await hashString(JSON.stringify(requestParams))}`;
 }
 
 // Helper to ensure method is valid
@@ -218,7 +230,7 @@ async function buildRequestConfig(
   // Add query params if they exist
   if (page) params.page = typeof page === "object" ? JSON.stringify(page) : page;
   if (sort) params.sort = typeof sort === "object" ? JSON.stringify(sort) : sort;
-  if (search) params.search = JSON.stringify(search);
+  if (search) params.search = typeof sort === "object" ? JSON.stringify(search) : search;
 
   // Get token or key
   const key = await buildRequestKey(method, endpoint, options);

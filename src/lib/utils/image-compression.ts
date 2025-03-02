@@ -1,4 +1,4 @@
-import { imageCompression } from "lib/vendors";
+import { imageCompression } from "@/lib/vendors";
 
 export const compressImage = async (image: File): Promise<File | null> => {
   if (!image) return null;

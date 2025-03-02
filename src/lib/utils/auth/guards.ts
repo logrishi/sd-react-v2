@@ -1,4 +1,4 @@
-import { store } from "../../store/store";
+import { store } from "@/services/store";
 
 // Auth guard utility for route protection
 export function authGuard() {

@@ -1,16 +1,16 @@
 import Api from "./api";
-import axios from "axios";
-import { compressImage } from "../../lib/utils/image-compression";
-import { formatBookData } from "../../lib/utils/text-utils";
-import { hashPassword } from "../../lib/utils/utils";
+import { axios } from "@/lib/vendors";
+import { compressImage } from "@/lib/utils/image-compression";
+import { formatBookData } from "@/lib/utils/text-utils";
+import { hashPassword } from "@/lib/utils/utils";
 
 // Debug utility
 const debug = {
-  log: (message: string, data: unknown) => {
+  log: (message: string, data: any) => {
     console.log(`[DEBUG] ${message}:`, data);
     return data;
   },
-  error: (message: string, error: unknown) => {
+  error: (message: string, error: any) => {
     console.error(`[ERROR ❌ ] ${message}:`, error);
     throw error;
   },
@@ -31,9 +31,9 @@ export async function getUser(id: string, options = {}) {
   }
 }
 
-export async function updateUser(id: string, data: unknown, options = {}) {
+export async function updateUser(id: string, data: any, options = {}) {
   try {
-    const response = await userApi.update(id, data as Partial<unknown>, options);
+    const response = await userApi.update(id, data as Partial<any>, options);
     return debug.log("Update User", response);
   } catch (error) {
     return debug.error("Update User", error);
@@ -68,7 +68,7 @@ export async function checkUserExists(email: string, options = {}) {
 export async function createUser(userData: { email: string; password: string; name: string; phone?: string }) {
   try {
     // Check if user exists first
-    const existingUser = await checkUserExists(userData.email);
+    const existingUser: any = await checkUserExists(userData.email);
     if (!existingUser.err && existingUser.result?.length > 0) {
       return { err: true, result: "Email already registered" };
     }
@@ -94,7 +94,7 @@ export async function createUser(userData: { email: string; password: string; na
     }
 
     return { err: true, result: response.result || "Failed to create account" };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { err: true, result: error?.message || "Failed to create account" };
   }
 }
@@ -135,7 +135,7 @@ export async function checkForceFlags(userId: string, options = {}) {
 }
 
 // Book Actions
-export async function createBook(data: unknown) {
+export async function createBook(data: any) {
   try {
     const response = await bookApi.create(formatBookData(data));
     return debug.log("Create Book", response);
@@ -144,7 +144,7 @@ export async function createBook(data: unknown) {
   }
 }
 
-export async function updateBook(id: string, data: unknown) {}
+export async function updateBook(id: string, data: any) {}
 
 export async function getBooks() {
   try {
@@ -183,7 +183,7 @@ export async function getOrder(id: string, options = {}) {
   }
 }
 
-export async function createOrder(data: unknown, options = {}) {
+export async function createOrder(data: any, options = {}) {
   try {
     const response = await orderApi.create(data, options);
     return debug.log("Create Order", response);
@@ -192,7 +192,7 @@ export async function createOrder(data: unknown, options = {}) {
   }
 }
 
-export async function updateOrder(id: string, data: unknown, options = {}) {
+export async function updateOrder(id: string, data: any, options = {}) {
   try {
     const response = await orderApi.update(id, data, options);
     return debug.log("Update Order", response);
