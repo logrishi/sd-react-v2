@@ -1,0 +1,2 @@
+- Updated the 'Book' interface in 'src/features/home/index.tsx':
+  - Changed the 'id' property type from 'string' to 'number' to match the definition in 'src/components/book-card.tsx'.

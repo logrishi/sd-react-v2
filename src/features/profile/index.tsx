@@ -1,14 +1,14 @@
-import { createElement, type FC } from "@/lib";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { store } from "@/core/store";
+import { type FC } from "@/lib/vendors";
+import { Button } from "@/components/common/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/ui/card";
+import { Input } from "@/components/common/ui/input";
+import { Label } from "@/components/common/ui/label";
+import { Separator } from "@/components/common/ui/separator";
+import { Switch } from "@/components/common/ui/switch";
+import { store } from "@/store";
 import { useState } from "react";
-import { Mail, User, Lock, Bell, Shield, HelpCircle, ExternalLink, PencilLine, Camera, LogOut } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Mail, User, Lock, Shield, HelpCircle, ExternalLink, PencilLine, Camera, LogOut } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/common/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -20,11 +20,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@/components/common/ui/alert-dialog";
 
 const Profile: FC = () => {
   const navigate = useNavigate();
-  const { user, isLoggedIn }: any = store.auth() ?? {};
+  const { user, isLoggedIn }: any = store.auth ?? {};
   const [isEditing, setIsEditing] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -45,17 +45,15 @@ const Profile: FC = () => {
   };
 
   const handleLogout = () => {
-    store.auth.set({
-      isLoggedIn: false,
-      user: {},
-      token: null,
-      session: null,
-      isAdmin: false,
-    });
-    navigate("/login");
+    store.auth.isLoggedIn = false;
+    store.auth.user = {};
+    store.auth.token = null;
+    store.auth.session = null;
+    store.auth.isAdmin = false;
   };
+  navigate("/login");
 
-  if (!isLoggedIn) {
+  if (!store.auth.isLoggedIn) {
     return (
       <div className="container py-6">
         <Card>
@@ -88,13 +86,14 @@ const Profile: FC = () => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
-              <AlertDialogDescription>
-                You will need to login again to access your account.
-              </AlertDialogDescription>
+              <AlertDialogDescription>You will need to login again to access your account.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction
+                onClick={handleLogout}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 Logout
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -16,7 +16,7 @@ globs:
 - @src/assets/styles/globals.css - Global styles
 
 ## State Management
-- @src/store/states.ts - Zustand global state definitions
+- @src/store.ts - Zustand global state definitions
 - Uses TanStack Query for server state management
 
 ## Routing

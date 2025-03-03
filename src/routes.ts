@@ -18,31 +18,31 @@ export const routes: RouteConfig[] = [
     component: () => import("@/features/home"),
     isLazy: true,
   },
-  // {
-  //   path: "/login",
-  //   component: () => import("@/ui/pages/auth/login"),
-  //   isLazy: true,
-  // },
-  // {
-  //   path: "/signup",
-  //   component: () => import("@/ui/pages/auth/signup"),
-  //   isLazy: true,
-  // },
-  // {
-  //   path: "/forgot-password",
-  //   component: () => import("@/ui/pages/auth/forgot-password"),
-  //   isLazy: true,
-  // },
-  // {
-  //   path: "/orders",
-  //   component: () => import("@/ui/pages/orders"),
-  //   auth: true,
-  //   isLazy: true,
-  // },
-  // {
-  //   path: "/profile",
-  //   component: () => import("@/ui/pages/profile"),
-  //   auth: true,
-  //   isLazy: true,
-  // },
+  {
+    path: "/login",
+    component: () => import("@/features/auth/login"),
+    isLazy: true,
+  },
+  {
+    path: "/signup",
+    component: () => import("@/features/auth/signup"),
+    isLazy: true,
+  },
+  {
+    path: "/forgot-password",
+    component: () => import("@/features/auth/forgot-password"),
+    isLazy: true,
+  },
+  {
+    path: "/orders",
+    component: () => import("@/features/orders"),
+    auth: true,
+    isLazy: true,
+  },
+  {
+    path: "/profile",
+    component: () => import("@/features/profile"),
+    auth: true,
+    isLazy: true,
+  },
 ];

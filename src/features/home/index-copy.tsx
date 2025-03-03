@@ -1,14 +1,14 @@
-import { createElement, type FC } from "@/lib";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { createElement, type FC } from "@/lib/vendors";
+import { Button } from "@/components/common/ui/button";
+import { Input } from "@/components/common/ui/input";
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/common/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
 import { SearchIcon } from "lucide-react";
-import { store } from "@/core/store";
+import { store } from "@/store";
 import { useEffect, useState } from "react";
-import { getBooks } from "@/core/backend/actions";
-import BookCard from "@/ui/components/books/BookCard";
-import { sanitizeText } from "@/lib/text-utils";
+import { getBooks } from "@/services/backend/actions";
+import BookCard from "@/components/book-card";
+import { sanitizeText } from "@/lib/utils/text-utils";
 
 const Home: FC = () => {
   const { books, searchQuery, selectedCategory = "all" }: any = store.library() ?? {};
@@ -70,14 +70,19 @@ const Home: FC = () => {
       {/* Hero Section */}
       <div className="relative w-full">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background z-10" />
-        <div 
-          className="w-full h-[300px] sm:h-[400px] bg-cover bg-center" 
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80')" }}
+        <div
+          className="w-full h-[300px] sm:h-[400px] bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80')",
+          }}
         />
         <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
           <div className="container mx-auto">
             <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">Discover Your Next Read</h1>
-            <p className="text-white/90 mt-2 max-w-xl drop-shadow-md">Explore our curated collection of books across various categories</p>
+            <p className="text-white/90 mt-2 max-w-xl drop-shadow-md">
+              Explore our curated collection of books across various categories
+            </p>
           </div>
         </div>
       </div>
@@ -95,16 +100,20 @@ const Home: FC = () => {
               onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
-          <Tabs 
-            defaultValue={selectedCategory} 
-            onValueChange={handleCategoryChange}
-            className="w-full sm:w-auto"
-          >
+          <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full sm:w-auto">
             <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex">
-              <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
-              <TabsTrigger value="fiction" className="text-xs sm:text-sm">Fiction</TabsTrigger>
-              <TabsTrigger value="non-fiction" className="text-xs sm:text-sm">Non-Fiction</TabsTrigger>
-              <TabsTrigger value="technology" className="text-xs sm:text-sm">Technology</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs sm:text-sm">
+                All
+              </TabsTrigger>
+              <TabsTrigger value="fiction" className="text-xs sm:text-sm">
+                Fiction
+              </TabsTrigger>
+              <TabsTrigger value="non-fiction" className="text-xs sm:text-sm">
+                Non-Fiction
+              </TabsTrigger>
+              <TabsTrigger value="technology" className="text-xs sm:text-sm">
+                Technology
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

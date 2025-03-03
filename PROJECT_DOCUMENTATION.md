@@ -25,6 +25,8 @@ A modern React application built with Vite and TypeScript, featuring a feature-b
 17. [Additional Configuration](#additional-configuration)
 18. [Navigation Utility](#navigation-utility)
 19. [Absolute Imports Setup](#absolute-imports-setup)
+20. [Image Handling](#image-handling)
+21. [Naming Conventions](#naming-conventions)
 
 ## Project Overview
 
@@ -165,6 +167,23 @@ The project is bootstrapped with Vite, providing:
 - Customizable through TailwindCSS
 - Accessible components out of the box
 
+## Shadcn/ui
+
+### Navigation Components
+
+#### Sidebar
+
+- Visible on large screens (lg breakpoint and above)
+- Navigation items with icons and labels
+- Active state tracking
+- Supports left/right orientation
+
+#### Bottom Tabs
+
+- Mobile navigation for smaller screens
+- Icon and label navigation items
+- Active state tracking
+
 ## Animation Libraries
 
 ### Framer Motion
@@ -284,3 +303,15 @@ To enable absolute imports in the project, the following configuration has been 
   }
 }
 ```
+
+## Image Handling
+
+When displaying images, ensure that the image paths are prefixed with `VITE_IMAGE_URL`. You can retrieve this value from the environment variables using the `getEnvVar()` function located in `lib/utils.env-vars.ts`. For example:
+
+```javascript
+const imageUrl = `${getEnvVar("VITE_IMAGE_URL")}/image-path`;
+```
+
+## Naming Conventions
+
+All files and folder names in this project should be in lowercase and hyphen-separated (e.g., `my-file-name`, `my-folder-name`). This convention helps maintain consistency and readability throughout the project.
