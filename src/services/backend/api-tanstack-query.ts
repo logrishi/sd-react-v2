@@ -28,7 +28,7 @@ const typedTokens: Tokens = tokens as Tokens;
 
 type HttpMethod = "get" | "post" | "put" | "delete" | "patch" | "sql";
 
-interface RequestOptions {
+export interface RequestOptions {
   [key: string]: any;
   loading?: boolean;
   body?: any;
@@ -316,7 +316,7 @@ interface ApiInterface {
 }
 
 // Create the API instance with all methods
-const Api: ApiInterface = {
+const FrontQLApi: ApiInterface = {
   get: (endpoint, options) => makeRequest("get", endpoint, options),
   post: (endpoint, options) => makeRequest("post", endpoint, options),
   put: (endpoint, options) => makeRequest("put", endpoint, options),
@@ -336,4 +336,4 @@ const Api: ApiInterface = {
   }),
 };
 
-export default Api;
+export default FrontQLApi;

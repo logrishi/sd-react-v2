@@ -316,7 +316,7 @@ interface ApiInterface {
 }
 
 // Create the API instance with all methods
-const FrontQLApi: ApiInterface = {
+const Api: ApiInterface = {
   get: (endpoint, options) => makeRequest("get", endpoint, options),
   post: (endpoint, options) => makeRequest("post", endpoint, options),
   put: (endpoint, options) => makeRequest("put", endpoint, options),
@@ -336,4 +336,4 @@ const FrontQLApi: ApiInterface = {
   }),
 };
 
-export default FrontQLApi;
+export default Api;
