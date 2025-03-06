@@ -1,14 +1,13 @@
-import { createElement, type FC } from "@/lib";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { type FC } from "@/lib/vendors";
+import { Button } from "@/components/common/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/ui/card";
+import { Input } from "@/components/common/ui/input";
 import { useNavigate } from "react-router-dom";
-import { store } from "@/core/store";
-import { signup } from "@/core/backend/actions";
+import { store } from "@/services/store";
+import { signup } from "@/services/backend/actions";
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { withForceFlags } from "@/ui/components/auth/withForceFlags";
+import { withForceFlags } from "@/components/auth/withForceFlags";
 
 const Signup: FC = () => {
   const navigate = useNavigate();

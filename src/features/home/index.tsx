@@ -1,26 +1,31 @@
 import { createElement, type FC } from "@/lib/vendors";
+import BookCardSkeleton from "./components/book-card-skeleton";
 import { Button } from "@/components/common/ui/button";
 import { Input } from "@/components/common/ui/input";
-import { Card, CardContent, CardTitle, CardDescription } from "@/components/common/ui/card";
+import { Card, CardContent, CardTitle, CardDescription, CardHeader, CardFooter } from "@/components/common/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
-import { SearchIcon } from "lucide-react";
+import { SearchIcon, BellIcon, Share2Icon, BookmarkIcon, ChevronRightIcon } from "lucide-react";
 import { store } from "@/services/store";
 import { useEffect, useState } from "react";
 import { getBooks } from "@/services/backend/actions";
-import BookCard from "@/components/book-card";
 import { sanitizeText } from "@/lib/utils/text-utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avatar";
+import { Badge } from "@/components/common/ui/badge";
+import { getEnvVar } from "@/lib/utils/env-vars";
+import { useNavigate } from "react-router-dom";
 
 interface Book {
   id: number;
   name: string;
   description: string;
   category: string;
-  sample: string;
+  image: string;
 }
 
 const Home: FC = () => {
   const { books, searchQuery, selectedCategory } = store.library();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -48,9 +53,14 @@ const Home: FC = () => {
     store.library.set({ selectedCategory: category });
   };
 
-  const handleBookmark = (bookId: string) => {
-    // TODO: Implement bookmarking functionality
-    console.log("Bookmark clicked:", bookId);
+  const { books: bookmarkedBooks } = store.bookmark() as any;
+
+  const handleBookmark = (bookId: number) => {
+    const isBookmarked = bookmarkedBooks.includes(bookId);
+    const updatedBookmarks = isBookmarked
+      ? bookmarkedBooks.filter((id: number) => id !== bookId)
+      : [...bookmarkedBooks, bookId];
+    store.bookmark.set({ books: updatedBookmarks });
   };
 
   // Only filter books if there's a search query or category selected
@@ -73,92 +83,135 @@ const Home: FC = () => {
   });
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <div className="relative w-full">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background z-10" />
-        <div
-          className="w-full h-[300px] sm:h-[400px] bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80')",
-          }}
-        />
-        <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
-          <div className="container mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">Discover Your Next Read</h1>
-            <p className="text-white/90 mt-2 max-w-xl drop-shadow-md">
-              Explore our curated collection of books across various categories
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        {/* Search and Tabs */}
-        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-64">
-            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search books..."
-              className="pl-8"
-              value={searchQuery || ""}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-          </div>
-          <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full sm:w-auto">
-            <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex">
-              <TabsTrigger value="all" className="text-xs sm:text-sm">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="fiction" className="text-xs sm:text-sm">
-                Fiction
-              </TabsTrigger>
-              <TabsTrigger value="non-fiction" className="text-xs sm:text-sm">
-                Non-Fiction
-              </TabsTrigger>
-              <TabsTrigger value="technology" className="text-xs sm:text-sm">
-                Technology
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Books Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[1, 2, 3, 4].map((n) => (
-              <Card key={n} className="animate-pulse shadow-sm border-0">
-                <div className="aspect-[16/9] bg-muted" />
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="h-4 w-2/3 bg-muted rounded" />
-                    <div className="h-3 w-full bg-muted rounded" />
-                    <div className="h-3 w-4/5 bg-muted rounded" />
-                    <div className="flex justify-between">
-                      <div className="h-3 w-1/4 bg-muted rounded" />
-                      <div className="h-3 w-1/6 bg-muted rounded" />
+      <main className="flex-1">
+        <div className="container py-6 space-y-4">
+          {/* Special For You */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold tracking-tight">#SpecialForYou</h2>
+            </div>
+            <div className="relative">
+              <Card className="bg-[#ff4d00] text-white overflow-hidden">
+                <CardContent className="grid grid-cols-2 p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-xl font-bold">Best Seller Books</h3>
+                      <p className="text-white/90 text-sm">Get Special Offer</p>
                     </div>
+                    <div>
+                      <p className="text-2xl font-bold">Up to 40%</p>
+                      <Button variant="secondary" className="mt-2">
+                        Claim
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="relative h-full">
+                    <img
+                      src="/placeholder-student.jpg"
+                      alt="Student with backpack"
+                      className="absolute right-0 bottom-0 h-full w-auto object-cover"
+                    />
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {displayedBooks.map((book) => (
-              <BookCard key={book.id} book={book} onBookmark={handleBookmark} bookmarked={false} />
-            ))}
-            {displayedBooks?.length === 0 && searchQuery && (
-              <Card className="col-span-full p-6 text-center">
-                <CardTitle className="text-muted-foreground">No books found</CardTitle>
-                <CardDescription>Try adjusting your search or filters to find what you're looking for.</CardDescription>
-              </Card>
+            </div>
+          </section>
+
+          {/* Top Selling */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold tracking-tight">Browse my collection</h2>
+            </div>
+            <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full">
+              <TabsList className="w-full justify-start mb-4 bg-transparent">
+                <TabsTrigger value="all" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                  All
+                </TabsTrigger>
+                <TabsTrigger
+                  value="fiction"
+                  className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                >
+                  Fiction
+                </TabsTrigger>
+                <TabsTrigger
+                  value="non-fiction"
+                  className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                >
+                  Non-Fiction
+                </TabsTrigger>
+                <TabsTrigger
+                  value="technology"
+                  className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                >
+                  Technology
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {/* Books Grid */}
+            {loading ? (
+              <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {[1, 2, 3, 4].map((n) => (
+                  <BookCardSkeleton key={n} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {displayedBooks.map((book) => (
+                  <Card
+                    key={book.id}
+                    className="group overflow-hidden cursor-pointer"
+                    onClick={() => navigate(`/product/${book.id}`)}
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <img
+                        src={`${getEnvVar("VITE_IMAGE_URL")}/${book.image}`}
+                        alt={book.name}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                        <Badge variant="secondary" className="bg-background/80 hover:bg-background/80">
+                          {book.category}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-8 w-8 bg-background/80 hover:bg-background/80 ${bookmarkedBooks.includes(book.id) ? "text-red-500" : ""}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookmark(book.id);
+                          }}
+                        >
+                          <BookmarkIcon
+                            className="h-4 w-4"
+                            fill={bookmarkedBooks.includes(book.id) ? "currentColor" : "none"}
+                          />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold leading-none tracking-tight line-clamp-2">{book.name}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{book.description}</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0 flex items-center justify-between"></CardFooter>
+                  </Card>
+                ))}
+                {displayedBooks?.length === 0 && searchQuery && (
+                  <Card className="col-span-full p-6 text-center">
+                    <CardTitle className="text-muted-foreground">No books found</CardTitle>
+                    <CardDescription>
+                      Try adjusting your search or filters to find what you're looking for.
+                    </CardDescription>
+                  </Card>
+                )}
+              </div>
             )}
-          </div>
-        )}
-      </div>
+          </section>
+        </div>
+      </main>
     </div>
   );
 };

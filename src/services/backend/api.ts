@@ -28,10 +28,15 @@ const typedTokens: Tokens = tokens as Tokens;
 
 type HttpMethod = "get" | "post" | "put" | "delete" | "patch" | "sql";
 
+interface SQLBody {
+  sql: string;
+  params: Array<{ [key: string]: string | number }>;
+}
+
 interface RequestOptions {
   [key: string]: any;
   loading?: boolean;
-  body?: any;
+  body?: any | SQLBody;
   key?: Record<string, string | any>;
   page?: number | string;
   sort?: string;
@@ -215,19 +220,19 @@ async function buildRequestConfig(
   const params: Record<string, any> = {};
 
   // Add headers if they exist
-  if (hidden) headers.hidden = JSON.stringify(hidden);
-  if (filter) headers.filter = JSON.stringify(filter);
-  if (fields) headers.fields = JSON.stringify(fields);
-  if (session) headers.session = JSON.stringify(session);
-  if (joins) headers.collections = JSON.stringify(joins);
-  if (validation) headers.validation = JSON.stringify(validation);
-  if (permissions) headers.permissions = JSON.stringify(permissions);
-  if (nearby) headers.nearby = JSON.stringify(nearby);
+  if (hidden) headers.hidden = hidden;
+  if (filter) headers.filter = filter;
+  if (fields) headers.fields = fields;
+  if (session) headers.session = session;
+  if (joins) headers.collections = joins;
+  if (validation) headers.validation = validation;
+  if (permissions) headers.permissions = permissions;
+  if (nearby) headers.nearby = nearby;
 
   // Add query params if they exist
-  if (page) params.page = typeof page === "object" ? JSON.stringify(page) : page;
-  if (sort) params.sort = typeof sort === "object" ? JSON.stringify(sort) : sort;
-  if (search) params.search = typeof sort === "object" ? JSON.stringify(search) : search;
+  if (page) params.page = page;
+  if (sort) params.sort = sort;
+  if (search) params.search = search;
 
   // Get token or key
   const key = await buildRequestKey(method, endpoint, options);

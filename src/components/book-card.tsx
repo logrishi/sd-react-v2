@@ -12,11 +12,11 @@ interface Book {
   name: string;
   description: string;
   category: string;
-  sample: string;
+  image: string;
 }
 const BookCard: React.FC<BookCardProps> = ({ book, onBookmark, bookmarked }) => {
-  const { id, name, description, sample } = book;
-  const imageUrl = `${getEnvVar("VITE_IMAGE_URL")}/${sample}`;
+  const { id, name, description, image } = book;
+  const imageUrl = `${getEnvVar("VITE_IMAGE_URL")}/${image}`;
 
   return (
     <Card key={id} className="max-w-sm rounded overflow-hidden shadow-lg">

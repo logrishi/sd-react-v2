@@ -11,7 +11,7 @@ A modern React application built with Vite and TypeScript, featuring a feature-b
 5. [Core Setup](#core-setup)
 6. [State Management](#state-management)
    - [Global State (Zustand)](#global-state-zustand)
-   - [Server State (TanStack Query)](#server-state-tanstack-query)
+   <!-- - [Server State (TanStack Query)](#server-state-tanstack-query) -->
 7. [Form Validation](#form-validation)
 8. [Routing](#routing)
 9. [Assets](#assets)
@@ -126,12 +126,12 @@ The project is bootstrapped with Vite, providing:
   };
   ```
 
-### Server State (TanStack Query)
+<!-- ### Server State (TanStack Query)
 
 - Handles server state management
 - Configured for data fetching and caching
 - Provides automatic background updates
-- Optimistic updates support
+- Optimistic updates support -->
 
 ## Form Validation
 
@@ -163,7 +163,7 @@ The project is bootstrapped with Vite, providing:
 ### HeroUI
 
 - Pre-built component library
-- Documentation: https://www.heroui.com
+- Documentation: https://www.heroui.com (using HeroUI v2.7.4)
 - Customizable through TailwindCSS
 - Accessible components out of the box
 

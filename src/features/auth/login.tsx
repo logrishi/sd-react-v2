@@ -1,14 +1,14 @@
-import { createElement, type FC } from "@/lib";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { type FC } from "@/lib/vendors";
+import { Button } from "@/components/common/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/ui/card";
+import { Input } from "@/components/common/ui/input";
 import { useNavigate } from "react-router-dom";
-import { store } from "@/core/store";
-import { login } from "@/core/backend/actions";
+import { store } from "@/services/store";
+import { checkUserExists, getUserPassword, login, resetPassword } from "@/services/backend/actions";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
-import { withForceFlags } from "@/ui/components/auth/withForceFlags";
+import { withForceFlags } from "@/components/auth/withForceFlags";
+import { comparePassword, hashPassword } from "@/lib/utils/utils";
 
 const Login: FC = () => {
   const navigate = useNavigate();
@@ -22,17 +22,16 @@ const Login: FC = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (isLoggedIn) {
-      navigate("/dashboard");
+      navigate("/");
     }
   }, [isLoggedIn, navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
 
     try {
-      setError("");
-
-      // Validate inputs
+      // Input validation
       if (!email || !password) {
         setError("Please fill in all fields");
         return;
@@ -40,23 +39,77 @@ const Login: FC = () => {
 
       setLoading(true);
 
-      const response = await login({
-        email,
-        password,
+      // Step 1: Check if user exists
+      const existingUser = await checkUserExists(email, {
+        fields: "email, password, update_password, force_password_reset",
       });
 
-      if (!response.err) {
-        store.auth.set({
-          isLoggedIn: true,
-          user: { email, id: response.result },
-          token: response.token,
-        });
-        navigate("/dashboard");
-      } else {
-        setError(response.result || "Login failed");
+      if (!existingUser?.result?.length) {
+        setError("Invalid credentials");
+        return;
       }
+
+      const user = existingUser.result[0];
+
+      // Step 2: Handle force password reset
+      if (user.force_password_reset) {
+        navigate("/forgot-password");
+        return;
+      }
+
+      // Step 3: Compare passwords
+      const passwordMatch = await comparePassword(password, user.password);
+      if (!passwordMatch) {
+        setError("Invalid credentials");
+        return;
+      }
+
+      // Step 4: Handle password update if required
+      let loginHash = user.password; // Default to existing hash
+      if (user.update_password) {
+        // Generate new hash for the entered password
+        const newHash = await hashPassword(password);
+        const resetResponse = await resetPassword(user.id, newHash, { update_password: 0 });
+
+        if (resetResponse.err) {
+          setError("Failed to update password");
+          return;
+        }
+
+        // Use new hash for login
+        loginHash = newHash;
+      }
+
+      // Step 5: Login with appropriate hash
+      const loginResponse = await login({
+        email,
+        password: loginHash,
+      });
+
+      if (loginResponse.err) {
+        setError("Login failed");
+        return;
+      }
+      const { result, session } = loginResponse;
+      // Step 6: Set auth state and redirect
+      store.auth.set({
+        isLoggedIn: true,
+        user: {
+          name: result.name,
+          email: result.email,
+          image: result.image,
+        },
+        session,
+        isAdmin: result.is_admin,
+        expiryDate: result.expiry_date,
+        updatePassword: result.update_password,
+        forcePasswordReset: result.force_password_reset,
+        forceLogout: result.force_logout,
+        lastLogin: result.last_login,
+      });
+      navigate("/");
     } catch (err: any) {
-      setError(err?.message || "Something went wrong");
+      setError("An error occurred during login");
     } finally {
       setLoading(false);
     }

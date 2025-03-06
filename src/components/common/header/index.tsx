@@ -1,45 +1,64 @@
-import { createElement, type FC } from "@/lib/vendors";
-// import { useAuthStore } from "@/store/auth.store";
-// import { Button } from "@/components/ui/button";
-import { Button, ButtonGroup } from "@heroui/button";
+import { useNavigate, useLocation, type FC } from "@/lib/vendors";
+import { Button } from "@/components/common/ui/button";
+import { ChevronLeft } from "@/assets/icons";
+import { headerIcons } from "@/lib/config/header-icons.config";
+import { cn } from "@/lib/utils/utils";
 
-export const Header: FC = () => {
-  // const { user, isAuthenticated, logout } = useAuthStore();
-  const isAuthenticated = true;
-  const user = {
-    name: "John Doe",
-  };
+interface HeaderProps {
+  showBackButton?: boolean;
+  title?: string;
+  rightIcons?: string[];
+  className?: string;
+}
 
-  const handleLogout = async () => {
-    try {
-      // await logout();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+export const Header: FC<HeaderProps> = ({
+  showBackButton = true,
+  title = "Saraighat Digital",
+  rightIcons = ["bookmarks", "cart", "notifications", "profile"],
+  className,
+}) => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <a href="/" className="text-xl font-bold text-primary">
-            Saraighat Digital
-          </a>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          {isAuthenticated ? (
-            <>
-              <span className="text-sm text-gray-600">Welcome, {user?.name || "User"}</span>
-              <Button variant="ghost" onPress={handleLogout}>
-                Logout
-              </Button>
-            </>
-          ) : (
-            <Button variant="ghost" onPress={() => (window.location.href = "/login")}>
-              Login
+    <header
+      className={cn(
+        "sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        className
+      )}
+    >
+      <div className="app-container flex h-14 items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          {showBackButton && (
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2">
+              <ChevronLeft className="h-5 w-5" />
             </Button>
           )}
+          <h1 className="text-lg font-semibold">{title}</h1>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {rightIcons.map((iconId) => {
+            const icon = headerIcons.find((i) => i.id === iconId);
+            if (!icon) return null;
+
+            return (
+              <Button
+                key={icon.id}
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (icon.onClick) {
+                    icon.onClick();
+                  } else if (icon.href && location.pathname !== icon.href) {
+                    navigate(icon.href);
+                  }
+                }}
+              >
+                <icon.icon className="h-5 w-5" />
+              </Button>
+            );
+          })}
         </div>
       </div>
     </header>

@@ -22,12 +22,22 @@ const bookApi = Api.resource("products");
 const orderApi = Api.resource("orders");
 
 // User Actions
-export async function getUser(id: string, options = {}) {
+
+export async function getUserPassword(email: string, options = { filter: "email:" + email }) {
   try {
-    const response = await userApi.getOne(id, options);
+    const response = await userApi.getOne(email, options);
     return debug.log("Get User", response);
   } catch (error) {
     return debug.error("Get User", error);
+  }
+}
+
+export async function getUserDetails(id: string, options = {}) {
+  try {
+    const response = await userApi.getOne(id, options);
+    return debug.log("Get User Details", response);
+  } catch (error) {
+    return debug.error("Get User Details", error);
   }
 }
 
@@ -41,7 +51,12 @@ export async function updateUser(id: string, data: any, options = {}) {
 }
 
 // Auth Actions
-export async function login(credentials: { email: string; password: string }, options = {}) {
+export async function login(
+  credentials: { email: string; password: string },
+  options = {
+    fields: "name, email, image, expiry_date, is_admin, update_password, force_logout, force_password_reset,last_login",
+  }
+) {
   try {
     const response = await Api.post("/auth-users", {
       body: credentials,
@@ -62,6 +77,16 @@ export async function checkUserExists(email: string, options = {}) {
     return debug.log("Check User", response);
   } catch (error) {
     return debug.error("Check User", error);
+  }
+}
+
+export async function signup(userData: { email: string; password: string; name: string; phone?: string }) {
+  try {
+    // First create user
+    const createUserResponse = await createUser(userData);
+    return debug.log("Signup", createUserResponse);
+  } catch (error) {
+    return debug.error("Signup", error);
   }
 }
 
@@ -99,17 +124,17 @@ export async function createUser(userData: { email: string; password: string; na
   }
 }
 
-export async function signup(userData: { email: string; password: string; name: string; phone?: string }) {
+export const resetPassword = async (userId: number, hashedPassword: string, options = {}) => {
   try {
-    // First create user
-    const createUserResponse = await createUser(userData);
-    return debug.log("Signup", createUserResponse);
+    const response = await Api.put(`/users/${userId}`, {
+      body: { password: hashedPassword, ...options },
+    });
+    console.log("Reset Password", response);
+    return debug.log("Reset Password", response);
   } catch (error) {
-    return debug.error("Signup", error);
+    return debug.error("Reset Password", error);
   }
-}
-
-export const resetPassword = async (email: string) => {};
+};
 
 // Force Flag Actions
 export async function updateForceFlags(
@@ -170,6 +195,28 @@ export async function deleteBook(id: string, options = {}) {
     return debug.log("Delete Book", response);
   } catch (error) {
     return debug.error("Delete Book", error);
+  }
+}
+
+// Review Actions
+export async function getBookReviews(bookId: string, options = {}) {
+  try {
+    const response = await Api.get(`/products/${bookId}/reviews`, options);
+    return debug.log("Get Book Reviews", response);
+  } catch (error) {
+    return debug.error("Get Book Reviews", error);
+  }
+}
+
+export async function submitBookReview(bookId: string, data: { rating: number; review: string }, options = {}) {
+  try {
+    const response = await Api.post(`/products/${bookId}/reviews`, {
+      body: data,
+      ...options,
+    });
+    return debug.log("Submit Book Review", response);
+  } catch (error) {
+    return debug.error("Submit Book Review", error);
   }
 }
 

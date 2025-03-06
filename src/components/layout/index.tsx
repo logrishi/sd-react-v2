@@ -1,7 +1,12 @@
 import { type FC, Outlet, type ReactNode } from "@/lib/vendors";
+import { APP_NAME, BOTTOM_CONTENT_PADDING } from "@/lib/utils/constants";
 import Navigation from "../navigation";
 import { navigationConfig } from "@/lib/config/navigation.config";
 import { cn } from "@/lib/utils/utils";
+import { Header } from "@/components/common/header";
+import { useLocation } from "react-router-dom";
+import { routes } from "@/routes";
+import { headerIcons } from "@/lib/config/header-icons.config";
 
 interface LayoutProps {
   children?: ReactNode;
@@ -9,6 +14,9 @@ interface LayoutProps {
   showRightSidebar?: boolean;
   showBottomTabs?: boolean;
   showFooter?: boolean;
+  showBackButton?: boolean;
+  headerTitle?: string;
+  headerRightIcons?: string[];
 }
 
 export const Layout: FC<LayoutProps> = ({
@@ -17,15 +25,29 @@ export const Layout: FC<LayoutProps> = ({
   showRightSidebar = false,
   showBottomTabs = true,
   showFooter = true,
+  showBackButton: propShowBackButton,
+  headerTitle: propHeaderTitle,
+  headerRightIcons: propHeaderRightIcons,
 }) => {
+  const location = useLocation();
+  const currentRoute = routes.find((route) => {
+    // Convert route path to regex to handle dynamic segments
+    const routeRegex = new RegExp(`^${route.path.replace(/:[^/]+/g, "[^/]+")}$`);
+    return routeRegex.test(location.pathname);
+  });
+
+  // Use route config or prop values, with props taking precedence
+  const showBackButton =
+    propShowBackButton ??
+    currentRoute?.layoutProps?.showBackButton ??
+    !navigationConfig.some((item) => item.path === location.pathname);
+  const headerTitle = propHeaderTitle ?? currentRoute?.layoutProps?.headerTitle ?? APP_NAME;
+  const headerRightIcons =
+    propHeaderRightIcons ?? currentRoute?.layoutProps?.headerRightIcons ?? headerIcons.map((icon) => icon.id);
   return (
     <div className="flex flex-col min-h-screen bg-background layout-sidebar">
       {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="app-container flex h-14 items-center">
-          <h1 className="text-xl font-bold">Saraighat Digital</h1>
-        </div>
-      </header>
+      <Header showBackButton={showBackButton} title={headerTitle} rightIcons={headerRightIcons} />
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
@@ -40,7 +62,10 @@ export const Layout: FC<LayoutProps> = ({
             showRightSidebar && "lg:mr-sidebar"
           )}
         >
-          <main className="flex-1 py-6 overflow-y-auto">
+          <main
+            className="flex-1 py-6 overflow-y-auto"
+            style={{ paddingBottom: showBottomTabs ? `${BOTTOM_CONTENT_PADDING}px` : undefined }}
+          >
             <div className="app-container">{children ? children : <Outlet />}</div>
           </main>
 

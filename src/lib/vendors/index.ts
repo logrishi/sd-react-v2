@@ -2,10 +2,14 @@
 export {
   useState,
   useEffect,
+  useRef,
+  useMemo,
   createContext,
   useContext,
   createElement,
   lazy,
+  forwardRef,
+  useOptimistic,
   Suspense,
   type FC,
   type ReactNode,
@@ -15,9 +19,17 @@ export {
 export { default as React } from "react";
 
 // react-router-dom
-export { useLocation, Outlet, Link, NavLink as RouterNavLink } from "react-router-dom";
-
-export { createBrowserRouter, Navigate, RouterProvider, useNavigate } from "react-router-dom";
+export {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+  useNavigate,
+  useParams,
+  useLocation,
+  Outlet,
+  Link,
+  NavLink as RouterNavLink,
+} from "react-router-dom";
 
 // Framer Motion
 export { motion } from "framer-motion";
