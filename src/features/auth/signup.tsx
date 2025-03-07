@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/common/ui/input";
 import { useNavigate } from "react-router-dom";
 import { store } from "@/services/store";
-import { signup } from "@/services/backend/actions";
+import { signup, handleLoginSuccess } from "@/services/backend/actions";
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { withForceFlags } from "@/components/auth/withForceFlags";
+import { withForceFlags } from "@/components/auth/with-force-flags";
 
 const Signup: FC = () => {
   const navigate = useNavigate();
@@ -19,19 +19,17 @@ const Signup: FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Clear error on unmount
-  useEffect(() => {
-    return () => {
-      setError("");
-    };
-  }, []);
-
   // Redirect if already logged in
   useEffect(() => {
     if (isLoggedIn) {
-      navigate("/dashboard");
+      navigate("/");
     }
   }, [isLoggedIn, navigate]);
+
+  // Clear error when component unmounts
+  useEffect(() => {
+    return () => setError("");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,19 +51,15 @@ const Signup: FC = () => {
         password: password,
       });
 
-      // If createUser succeeded
       if (response && !response.err) {
-        store.auth.set({
-          isLoggedIn: true,
-          user: { email, name, id: response.result },
-          token: response.token,
-          session: response.session,
-          isAdmin: false,
-        });
-        navigate("/");
+        const { success } = handleLoginSuccess(response);
+        if (success) {
+          navigate("/");
+        } else {
+          setError("Failed to create account");
+        }
       } else {
-        // If createUser failed
-        setError(response?.result || "Failed to create account");
+        setError("Failed to create account");
       }
     } catch (err) {
       setError("An error occurred");

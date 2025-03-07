@@ -64,8 +64,8 @@ export const routes: RouteConfig[] = [
     },
   },
   {
-    path: "/forgot-password",
-    component: () => import("@/features/auth/forgot-password"),
+    path: "/password-reset",
+    component: () => import("@/features/auth/password-reset"),
     isLazy: true,
     layoutProps: {
       showBackButton: true,

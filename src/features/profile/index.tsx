@@ -5,8 +5,8 @@ import { Input } from "@/components/common/ui/input";
 import { Label } from "@/components/common/ui/label";
 import { Separator } from "@/components/common/ui/separator";
 import { Switch } from "@/components/common/ui/switch";
-import { store } from "@/store";
-import { useState } from "react";
+import { store } from "@/services/store";
+import { useState, useEffect } from "react";
 import { Mail, User, Lock, Shield, HelpCircle, ExternalLink, PencilLine, Camera, LogOut } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/common/ui/avatar";
 import { useNavigate } from "react-router-dom";
@@ -21,10 +21,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/common/ui/alert-dialog";
+import { getEnvVar } from "@/lib/utils/env-vars";
+import { navigateTo } from "@/lib/utils/navigate-to";
 
 const Profile: FC = () => {
   const navigate = useNavigate();
-  const { user, isLoggedIn }: any = store.auth ?? {};
+  const { user = { name: "", email: "", image: "" }, isLoggedIn = false } = store.auth.get() ?? {};
+
+  // Redirect if not logged in
+  // useEffect(() => {
+  //   if (!isLoggedIn) {
+  //     navigate("/login");
+  //   }
+  // }, [isLoggedIn, navigate]);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -45,15 +54,21 @@ const Profile: FC = () => {
   };
 
   const handleLogout = () => {
-    store.auth.isLoggedIn = false;
-    store.auth.user = {};
-    store.auth.token = null;
-    store.auth.session = null;
-    store.auth.isAdmin = false;
+    store.auth.set({
+      isLoggedIn: false,
+      user: { name: "", email: "", image: "" },
+      session: null,
+      isAdmin: false,
+      expiryDate: null,
+      updatePassword: false,
+      forcePasswordReset: false,
+      forceLogout: false,
+      lastLogin: null,
+    });
+    navigate("/login");
   };
-  navigate("/login");
 
-  if (!store.auth.isLoggedIn) {
+  if (!isLoggedIn) {
     return (
       <div className="container py-6">
         <Card>
@@ -116,35 +131,41 @@ const Profile: FC = () => {
           <CardDescription>Update your personal details and how we can reach you</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex flex-col items-center space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="flex flex-col items-center justify-center min-h-[180px] space-y-4">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  {user.avatar ? (
-                    <AvatarImage src={user.avatar} alt={user.name} />
+                  {user.image ? (
+                    <AvatarImage src={`${getEnvVar("VITE_IMAGE_URL")}/${user.image}`} alt={user.name} />
                   ) : (
-                    <AvatarFallback>{user.name?.[0]?.toUpperCase()}</AvatarFallback>
-                  )}
-                  {isEditing && (
-                    <label
-                      htmlFor="avatar-upload"
-                      className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary hover:bg-primary/90"
-                    >
-                      <Camera className="h-4 w-4 text-primary-foreground" />
-                      <input
-                        type="file"
-                        id="avatar-upload"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                    </label>
+                    <AvatarFallback className="text-lg font-bold">
+                      {user.name?.split(" ").length > 1
+                        ? `${user.name.split(" ")[0][0]}${user.name.split(" ").pop()?.[0]}`.toUpperCase()
+                        : user.name?.[0]?.toUpperCase()}
+                    </AvatarFallback>
                   )}
                 </Avatar>
                 {isEditing && (
-                  <p className="text-sm text-muted-foreground">Click the camera icon to upload a new profile picture</p>
+                  <label
+                    htmlFor="avatar-upload"
+                    className="absolute bottom-0 right-0 translate-y-1/3 translate-x-1/4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary hover:bg-primary/90 shadow-md z-10"
+                  >
+                    <Camera className="h-4 w-4 text-primary-foreground" />
+                    <input
+                      type="file"
+                      id="avatar-upload"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </label>
                 )}
               </div>
+              {isEditing && (
+                <p className="text-sm text-muted-foreground text-center">
+                  Click the camera icon to upload a new profile picture
+                </p>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -192,26 +213,6 @@ const Profile: FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-          <CardDescription>Choose what updates you want to receive</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">Receive notifications about your account activity</p>
-            </div>
-            <Switch
-              checked={false} // TODO: Implement email notifications
-              onCheckedChange={() => {}}
-              aria-label="Toggle email notifications"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Security</CardTitle>
           <CardDescription>Manage your account security and privacy</CardDescription>
         </CardHeader>
@@ -222,9 +223,10 @@ const Profile: FC = () => {
                 <Lock className="h-5 w-5" />
                 <Label>Password</Label>
               </div>
-              <p className="text-sm text-muted-foreground">Last changed 3 months ago</p>
             </div>
-            <Button variant="outline">Change Password</Button>
+            <Button variant="outline" onClick={() => navigate("/password-reset")}>
+              Change Password
+            </Button>
           </div>
 
           <Separator />

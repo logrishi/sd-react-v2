@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { checkForceFlags, updateForceFlags } from "@/services/backend/actions";
+import { checkForceFlags, updateForceFlags, handleLogout } from "@/services/backend/actions";
 import { store } from "@/services/store";
 
 export const withForceFlags = (WrappedComponent: React.ComponentType) => {
@@ -14,23 +14,12 @@ export const withForceFlags = (WrappedComponent: React.ComponentType) => {
           const response = await checkForceFlags(user.id);
 
           if (response?.forceLogout) {
-            // Clear auth state
-            store.auth.set({
-              user: {},
-              token: null,
-              session: null,
-              isLoggedIn: false,
-              isAdmin: false,
-              forcePasswordReset: false,
-              forceLogout: false,
-            });
-
-            // Update flag in database
+            // Update flag in database first
             await updateForceFlags(user.id, { forceLogout: false });
-
-            // Clear localStorage
-            localStorage.clear();
-
+            
+            // Handle logout
+            handleLogout();
+            
             // Redirect to login
             navigate("/login");
             return;
@@ -43,8 +32,8 @@ export const withForceFlags = (WrappedComponent: React.ComponentType) => {
             // Update flag in database
             await updateForceFlags(user.id, { forcePasswordReset: false });
 
-            // Redirect to forgot-password
-            navigate("/forgot-password");
+            // Redirect to password-reset
+            navigate("/password-reset");
             return;
           }
         }
@@ -53,26 +42,17 @@ export const withForceFlags = (WrappedComponent: React.ComponentType) => {
       checkFlags();
     }, [isLoggedIn, user?.id, navigate]);
 
-    // If force password reset is true, redirect to forgot-password
+    // If force password reset is true, redirect to password-reset
     useEffect(() => {
       if (forcePasswordReset) {
-        navigate("/forgot-password");
+        navigate("/password-reset");
       }
     }, [forcePasswordReset, navigate]);
 
     // If force logout is true, handle logout
     useEffect(() => {
       if (forceLogout) {
-        localStorage.clear();
-        store.auth.set({
-          user: {},
-          token: null,
-          session: null,
-          isLoggedIn: false,
-          isAdmin: false,
-          forcePasswordReset: false,
-          forceLogout: false,
-        });
+        handleLogout();
         navigate("/login");
       }
     }, [forceLogout, navigate]);

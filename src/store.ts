@@ -1,11 +1,13 @@
 // Define the store with the correct format according to documentation
 export const store = {
   auth: {
-    user: { name: "", email: "", image: "" },
+    user: { name: "", email: "", image: "", password: "" },
     session: null,
     isLoggedIn: false,
     isAdmin: false,
     expiryDate: null,
+    isSubscribed: false,
+    isSubscriptionExpired: false,
     updatePassword: false,
     forcePasswordReset: false,
     forceLogout: false,

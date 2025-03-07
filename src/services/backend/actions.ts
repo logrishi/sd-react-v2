@@ -3,6 +3,8 @@ import { axios } from "@/lib/vendors";
 import { compressImage } from "@/lib/utils/image-compression";
 import { formatBookData } from "@/lib/utils/text-utils";
 import { hashPassword } from "@/lib/utils/utils";
+import { checkSubscriptionStatus } from "@/lib/utils/session";
+import { store } from "@/services/store";
 
 // Debug utility
 const debug = {
@@ -51,10 +53,59 @@ export async function updateUser(id: string, data: any, options = {}) {
 }
 
 // Auth Actions
+export function handleLoginSuccess(loginResponse: any) {
+  if (loginResponse.err) {
+    return { success: false, error: "Login failed" };
+  }
+
+  const { result, session } = loginResponse;
+  const { isSubscribed, isSubscriptionExpired } = checkSubscriptionStatus(result.expiry_date);
+
+  store.auth.set({
+    isLoggedIn: true,
+    user: {
+      name: result.name,
+      email: result.email,
+      image: result.image,
+      password: result.password,
+    },
+    session,
+    isAdmin: result.is_admin,
+    expiryDate: result.expiry_date,
+    isSubscribed,
+    isSubscriptionExpired,
+    updatePassword: result.update_password,
+    forcePasswordReset: result.force_password_reset,
+    forceLogout: result.force_logout,
+    lastLogin: result.last_login,
+  });
+
+  return { success: true };
+}
+
+export function handleLogout() {
+  store.auth.set({
+    isLoggedIn: false,
+    user: { name: "", email: "", image: "", password: "" },
+    session: null,
+    isAdmin: false,
+    expiryDate: null,
+    isSubscribed: false,
+    isSubscriptionExpired: false,
+    updatePassword: false,
+    forcePasswordReset: false,
+    forceLogout: false,
+    lastLogin: null,
+  });
+
+  return { success: true };
+}
+
 export async function login(
   credentials: { email: string; password: string },
   options = {
-    fields: "name, email, image, expiry_date, is_admin, update_password, force_logout, force_password_reset,last_login",
+    fields:
+      "id, name, email, image, password, expiry_date, is_admin, update_password, force_logout, force_password_reset,last_login",
   }
 ) {
   try {
@@ -62,6 +113,14 @@ export async function login(
       body: credentials,
       ...options,
     });
+
+    if (!response.err) {
+      // Update last_login timestamp
+      await userApi.update(response.result.id, {
+        last_login: new Date().toISOString(),
+      });
+    }
+
     return debug.log("Login", response);
   } catch (error) {
     return debug.error("Login", error);
@@ -112,15 +171,21 @@ export async function createUser(userData: { email: string; password: string; na
 
     if (!response.err) {
       // If user creation successful, attempt login
-      return await login({
+      const loginResponse = await login({
         email: userData.email,
         password: hashedPassword, // Use original password for login
       });
+
+      const { success, error } = handleLoginSuccess(loginResponse);
+      if (!success) {
+        return { err: true, result: "Login failed after signup" };
+      }
+      return loginResponse;
     }
 
-    return { err: true, result: response.result || "Failed to create account" };
+    return { err: true, result: "Failed to create account" };
   } catch (error: any) {
-    return { err: true, result: error?.message || "Failed to create account" };
+    return { err: true, result: "Failed to create account" };
   }
 }
 
@@ -129,7 +194,6 @@ export const resetPassword = async (userId: number, hashedPassword: string, opti
     const response = await Api.put(`/users/${userId}`, {
       body: { password: hashedPassword, ...options },
     });
-    console.log("Reset Password", response);
     return debug.log("Reset Password", response);
   } catch (error) {
     return debug.error("Reset Password", error);

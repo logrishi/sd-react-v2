@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/common/ui/input";
 import { useNavigate } from "react-router-dom";
 import { store } from "@/services/store";
-import { checkUserExists, getUserPassword, login, resetPassword } from "@/services/backend/actions";
+import { checkUserExists, getUserPassword, login, resetPassword, handleLoginSuccess } from "@/services/backend/actions";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
-import { withForceFlags } from "@/components/auth/withForceFlags";
+import { withForceFlags } from "@/components/auth/with-force-flags";
 import { comparePassword, hashPassword } from "@/lib/utils/utils";
 
 const Login: FC = () => {
@@ -53,7 +53,7 @@ const Login: FC = () => {
 
       // Step 2: Handle force password reset
       if (user.force_password_reset) {
-        navigate("/forgot-password");
+        navigate("/password-reset");
         return;
       }
 
@@ -86,27 +86,11 @@ const Login: FC = () => {
         password: loginHash,
       });
 
-      if (loginResponse.err) {
+      const { success, error } = handleLoginSuccess(loginResponse);
+      if (!success) {
         setError("Login failed");
         return;
       }
-      const { result, session } = loginResponse;
-      // Step 6: Set auth state and redirect
-      store.auth.set({
-        isLoggedIn: true,
-        user: {
-          name: result.name,
-          email: result.email,
-          image: result.image,
-        },
-        session,
-        isAdmin: result.is_admin,
-        expiryDate: result.expiry_date,
-        updatePassword: result.update_password,
-        forcePasswordReset: result.force_password_reset,
-        forceLogout: result.force_logout,
-        lastLogin: result.last_login,
-      });
       navigate("/");
     } catch (err: any) {
       setError("An error occurred during login");
@@ -179,7 +163,7 @@ const Login: FC = () => {
               </Button>
 
               <div className="text-center">
-                <Button variant="link" className="text-sm" type="button" onClick={() => navigate("/forgot-password")}>
+                <Button variant="link" className="text-sm" type="button" onClick={() => navigate("/password-reset")}>
                   Forgot password?
                 </Button>
               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC } from "@/lib/vendors";
+import { useEffect, useState, useCallback, type FC } from "@/lib/vendors";
 import { useNavigate } from "react-router-dom";
 import { store } from "@/services/store";
 import { Button } from "@/components/common/ui/button";
@@ -6,11 +6,11 @@ import { Input } from "@/components/common/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/common/ui/card";
 import { Label } from "@/components/common/ui/label";
 import { Alert, AlertDescription } from "@/components/common/ui/alert";
-import { resetPassword, checkUserExists } from "@/services/backend/actions";
+import { resetPassword, checkUserExists, login } from "@/services/backend/actions";
 import { generateOtpWithTimestamp, sendMail, verifyOtp, hashPassword } from "@/lib/utils/utils";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
-const ForgotPassword: FC = () => {
+const PasswordReset: FC = () => {
   const navigate = useNavigate();
   const { isLoggedIn } = store.auth.get() ?? {};
   const [email, setEmail] = useState("");
@@ -24,30 +24,57 @@ const ForgotPassword: FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [user, setUser] = useState<{ id: number } | null>(null);
+  const [user, setUser] = useState<{ id: number; email: string } | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      navigate("/");
-    }
-  }, [isLoggedIn, navigate]);
+  const startResendTimer = useCallback(() => {
+    setResendTimer(30); // 30 seconds cooldown
+    const timer = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (success) {
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
+      // Auto login after password reset
+      const autoLogin = async () => {
+        try {
+          const loginResponse = await login({
+            email: user?.email ?? "",
+            password,
+          });
+          if (!loginResponse.err) {
+            navigate("/");
+          } else {
+            navigate("/login");
+          }
+        } catch (err) {
+          navigate("/login");
+        }
+      };
+      autoLogin();
     }
-  }, [success, navigate]);
+  }, [success, navigate, user?.email, password]);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+
+    // Don't show loading state for resend
+    if (!otpSent) {
+      setLoading(true);
+    }
 
     try {
       // First check if user exists
-      const existingUser = await checkUserExists(email, { fields: "id" });
+      const existingUser = await checkUserExists(email, { fields: "id,email" });
       if (!existingUser?.result?.length) {
         setError("No account found with this email");
         return;
@@ -63,6 +90,8 @@ const ForgotPassword: FC = () => {
         setError("Failed to send OTP");
       } else {
         setOtpSent(true);
+        setOtp(""); // Clear OTP field when resending
+        startResendTimer();
       }
     } catch (err: any) {
       setError("Failed to send OTP");
@@ -106,9 +135,9 @@ const ForgotPassword: FC = () => {
 
     try {
       const hashedPassword = await hashPassword(password);
-      const response = await resetPassword(user.id, hashedPassword, { 
-        force_password_reset: 0, 
-        update_password: 0 
+      const response = await resetPassword(user.id, hashedPassword, {
+        force_password_reset: 0,
+        update_password: 0,
       });
 
       if (response.err) {
@@ -141,7 +170,7 @@ const ForgotPassword: FC = () => {
             {error && <div className="text-sm text-destructive mb-4">{error}</div>}
             {success && (
               <Alert className="mb-4">
-                <AlertDescription>Password reset successful. Redirecting to login...</AlertDescription>
+                <AlertDescription>Password reset successful. Logging you in...</AlertDescription>
               </Alert>
             )}
 
@@ -166,13 +195,19 @@ const ForgotPassword: FC = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Sending..." : "Send OTP"}
                 </Button>
-
-                <div className="text-center text-sm">
-                  Remember your password?{" "}
-                  <Button variant="link" className="px-0" type="button" onClick={() => navigate("/login")}>
-                    Login
-                  </Button>
-                </div>
+                {resendTimer > 0 && (
+                  <p className="text-sm text-muted-foreground text-center mt-2">
+                    You can request another OTP in {resendTimer} seconds
+                  </p>
+                )}
+                {!isLoggedIn && (
+                  <div className="text-center text-sm">
+                    Remember your password?{" "}
+                    <Button variant="link" className="px-0" type="button" onClick={() => navigate("/login")}>
+                      Login
+                    </Button>
+                  </div>
+                )}
               </form>
             ) : !otpVerified ? (
               <form onSubmit={handleVerifyOtp} className="space-y-4">
@@ -181,17 +216,44 @@ const ForgotPassword: FC = () => {
                     <Input
                       key={i}
                       type="text"
+                      pattern="[0-9]*"
+                      inputMode="numeric"
                       maxLength={1}
                       className="text-center text-lg h-12"
                       value={otp[i] || ""}
                       onChange={(e) => {
-                        const newOtp = otp.split("");
-                        newOtp[i] = e.target.value;
-                        setOtp(newOtp.join(""));
-                        if (e.target.value && i < 3) {
-                          const nextInput = document.querySelector(`input[name=otp-${i + 1}]`) as HTMLInputElement;
-                          if (nextInput) nextInput.focus();
+                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        if (value.length > 1) {
+                          // Handle paste of full OTP
+                          const pastedOtp = value.slice(0, 4);
+                          setOtp(pastedOtp);
+                          const lastInput = document.querySelector(`input[name=otp-3]`) as HTMLInputElement;
+                          if (lastInput) lastInput.focus();
+                        } else {
+                          const newOtp = otp.split("");
+                          newOtp[i] = value;
+                          setOtp(newOtp.join(""));
+                          if (value && i < 3) {
+                            const nextInput = document.querySelector(`input[name=otp-${i + 1}]`) as HTMLInputElement;
+                            if (nextInput) nextInput.focus();
+                          }
                         }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Backspace" && !otp[i] && i > 0) {
+                          const prevInput = document.querySelector(`input[name=otp-${i - 1}]`) as HTMLInputElement;
+                          if (prevInput) prevInput.focus();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pastedData = e.clipboardData
+                          .getData("text")
+                          .replace(/[^0-9]/g, "")
+                          .slice(0, 4);
+                        setOtp(pastedData);
+                        const lastInput = document.querySelector(`input[name=otp-3]`) as HTMLInputElement;
+                        if (lastInput) lastInput.focus();
                       }}
                       name={`otp-${i}`}
                       disabled={loading}
@@ -203,10 +265,16 @@ const ForgotPassword: FC = () => {
                 <Button type="submit" className="w-full" disabled={loading || otp.length !== 4}>
                   {loading ? "Verifying..." : "Verify OTP"}
                 </Button>
-
-                <div className="text-center">
-                  <Button variant="link" className="text-sm" type="button" onClick={() => setOtpSent(false)}>
-                    Send OTP again?
+                <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+                  <span>Didn't receive the code?</span>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm h-auto p-0"
+                    disabled={resendTimer > 0}
+                    onClick={handleSendOtp}
+                  >
+                    Send OTP again{resendTimer > 0 ? ` (${resendTimer}s)` : "?"}
                   </Button>
                 </div>
               </form>
@@ -269,14 +337,8 @@ const ForgotPassword: FC = () => {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Resetting..." : "Reset Password"}
+                  {loading ? "Resetting password and logging in..." : "Reset Password"}
                 </Button>
-
-                <div className="text-center">
-                  <Button variant="link" className="text-sm" type="button" onClick={() => setOtpVerified(false)}>
-                    Enter OTP again?
-                  </Button>
-                </div>
               </form>
             )}
           </CardContent>
@@ -286,4 +348,4 @@ const ForgotPassword: FC = () => {
   );
 };
 
-export default ForgotPassword;
+export default PasswordReset;
