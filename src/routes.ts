@@ -5,6 +5,7 @@ export interface RouteConfig {
   path: string;
   component: () => Promise<{ default: FC }>;
   auth?: boolean;
+  adminOnly?: boolean;
   isLazy?: boolean;
   layoutProps?: {
     showLeftSidebar?: boolean;
@@ -29,6 +30,15 @@ export interface RouteConfig {
 }
 
 export const routes: RouteConfig[] = [
+  {
+    path: "/notifications",
+    component: () => import("@/features/notifications"),
+    isLazy: true,
+    layoutProps: {
+      headerTitle: "Notifications",
+      showBackButton: true,
+    },
+  },
   {
     path: "/bookmarks",
     component: () => import("@/features/bookmark"),
@@ -121,6 +131,7 @@ export const routes: RouteConfig[] = [
     path: "/admin/dashboard",
     component: () => import("@/features/dashboard"),
     auth: true,
+    adminOnly: true,
     isLazy: true,
     layoutProps: {
       headerTitle: "Dashboard",
@@ -130,6 +141,7 @@ export const routes: RouteConfig[] = [
     path: "/admin/add-book",
     component: () => import("@/features/admin/add-book"),
     auth: true,
+    adminOnly: true,
     isLazy: true,
     layoutProps: {
       headerTitle: "Add Book",
@@ -139,6 +151,7 @@ export const routes: RouteConfig[] = [
     path: "/admin/edit-book/:id",
     component: () => import("@/features/admin/add-book"),
     auth: true,
+    adminOnly: true,
     isLazy: true,
     layoutProps: {
       headerTitle: "Edit Book",
@@ -148,6 +161,7 @@ export const routes: RouteConfig[] = [
     path: "/admin/books",
     component: () => import("@/features/admin/books"),
     auth: true,
+    adminOnly: true,
     isLazy: true,
     layoutProps: {
       headerTitle: "Manage Books",

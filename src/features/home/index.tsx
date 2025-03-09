@@ -4,7 +4,7 @@ import { Button } from "@/components/common/ui/button";
 import { Input } from "@/components/common/ui/input";
 import { Card, CardContent, CardTitle, CardDescription, CardHeader, CardFooter } from "@/components/common/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
-import { SearchIcon, BellIcon, Share2Icon, BookmarkIcon, ChevronRightIcon } from "lucide-react";
+import { SearchIcon, BellIcon, Share2Icon, BookmarkIcon, ChevronRightIcon, BookOpen, Headphones } from "lucide-react";
 import { store } from "@/services/store";
 import { useEffect, useState } from "react";
 import { SubscribeSheet } from "@/components/common/subscribe-sheet";
@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avat
 import { Badge } from "@/components/common/ui/badge";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { useNavigate } from "react-router-dom";
+import { homeBanner } from "@/assets/images";
 
 interface Book {
   id: number;
@@ -109,32 +110,43 @@ const Home: FC = () => {
           hasBottomTabs={true}
         />
         <div className="container py-6 space-y-4">
-          {/* Special For You */}
+          {/* Banner */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold tracking-tight">#SpecialForYou</h2>
+              <h2 className="text-xl font-semibold tracking-tight">Discover Our Library</h2>
             </div>
             <div className="relative">
-              <Card className="bg-[#ff4d00] text-white overflow-hidden">
-                <CardContent className="grid grid-cols-2 p-6">
-                  <div className="space-y-4">
+              <Card className="text-white overflow-hidden shadow-lg relative h-[260px]">
+                {/* Full-screen background image */}
+                <div className="absolute inset-0 w-full h-full">
+                  <img
+                    src={homeBanner}
+                    alt="Digital reading experience"
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Dark overlay */}
+                  <div className="absolute inset-0 bg-black/60"></div>
+                </div>
+                
+                {/* Content */}
+                <CardContent className="relative z-10 grid grid-cols-1 md:grid-cols-2 p-6 h-full">
+                  <div className="space-y-4 flex flex-col justify-center">
                     <div>
-                      <h3 className="text-xl font-bold">Best Seller Books</h3>
-                      <p className="text-white/90 text-sm">Get Special Offer</p>
+                      <h3 className="text-2xl font-bold">Your Complete Digital Library</h3>
+                      <p className="text-white/90 mt-2">
+                        Access our extensive collection of e-books and audiobooks anytime, anywhere.
+                      </p>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">Up to 40%</p>
-                      <Button variant="secondary" className="mt-2">
-                        Claim
-                      </Button>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="secondary" className="text-xs py-1">
+                        <Headphones className="h-3 w-3 mr-1" />
+                        Audiobooks
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs py-1">
+                        <BookOpen className="h-3 w-3 mr-1" />
+                        E-Books
+                      </Badge>
                     </div>
-                  </div>
-                  <div className="relative h-full">
-                    <img
-                      src="/placeholder-student.jpg"
-                      alt="Student with backpack"
-                      className="absolute right-0 bottom-0 h-full w-auto object-cover"
-                    />
                   </div>
                 </CardContent>
               </Card>
@@ -144,7 +156,7 @@ const Home: FC = () => {
           {/* Top Selling */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold tracking-tight">Browse my collection</h2>
+              <h2 className="text-xl font-semibold tracking-tight">Explore Our Collection</h2>
             </div>
             <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full">
               <TabsList className="w-full justify-start mb-4 bg-transparent">

@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/common/ui/alert-dialog";
 import { Badge } from "@/components/common/ui/badge";
+import { Loading } from "@/components/common/loading";
 
 interface Book {
   id: string;
@@ -105,9 +106,7 @@ const Books: FC = () => {
           {error && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm mb-4">{error}</div>}
 
           {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+            <Loading size="md" className="py-8" />
           ) : books.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No books found</p>
@@ -297,7 +296,7 @@ const Books: FC = () => {
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 disabled={deleteLoading === book.id}
                               >
-                                {deleteLoading === book.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                {deleteLoading === book.id ? <Loader2 className="h-4 w-4 animate-spin mr-2 text-primary" /> : null}
                                 Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>

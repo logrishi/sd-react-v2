@@ -3,13 +3,27 @@ import { createBrowserRouter, Navigate, Outlet } from "@/lib/vendors";
 import Layout from "@/components/layout";
 import { routes, type RouteConfig } from "@/routes";
 import Loading from "@/components/common/loading";
+import { store } from "@/services/store";
 
 // Higher-order component for protected routes
-const withProtection = (Component: FC): FC => {
+const withProtection = (Component: FC, requiresAdmin: boolean = false): FC => {
   const AuthRoute: FC = (props) => {
-    // const { isAuthenticated } = useAuthStore();
-    const isAuthenticated = true;
-    return isAuthenticated ? createElement(Component, props) : createElement(Navigate, { to: "/login", replace: true });
+    const auth = store.auth.get();
+    const isAuthenticated = auth.isLoggedIn;
+    const isAdmin = auth.isAdmin;
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      return createElement(Navigate, { to: "/login", replace: true });
+    }
+    
+    // If route requires admin access, check if user is admin
+    if (requiresAdmin && !isAdmin) {
+      return createElement(Navigate, { to: "/", replace: true });
+    }
+    
+    // User is authenticated and has required permissions
+    return createElement(Component, props);
   };
   return AuthRoute;
 };
@@ -29,9 +43,9 @@ const createRouter = (routes: RouteConfig[]) => {
     {
       path: "/",
       element: createElement(Outlet),
-      children: routes.map(({ path, component, auth: requiresAuth, isLazy, layoutProps }) => {
+      children: routes.map(({ path, component, auth: requiresAuth, adminOnly, isLazy, layoutProps }) => {
         const LoadedComponent = isLazy ? withLazyLoading(component) : (component() as unknown as FC);
-        const AuthComponent = requiresAuth ? withProtection(LoadedComponent) : LoadedComponent;
+        const AuthComponent = requiresAuth ? withProtection(LoadedComponent, adminOnly) : LoadedComponent;
 
         return {
           path,
