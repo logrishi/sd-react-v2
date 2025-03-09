@@ -101,7 +101,7 @@ const Home: FC = () => {
       {/* Main Content */}
       <main className="flex-1">
         {/* Bottom Sheet */}
-        <SubscribeSheet 
+        <SubscribeSheet
           isOpen={showSubscribeSheet}
           onClose={() => setShowSubscribeSheet(false)}
           message={subscribeMessage}
@@ -185,7 +185,7 @@ const Home: FC = () => {
                   <Card
                     key={book.id}
                     className="group overflow-hidden cursor-pointer"
-                    onClick={() => navigate(`/product/${book.id}`)}
+                    onClick={() => navigate(`/book/${book.id}`)}
                   >
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <img

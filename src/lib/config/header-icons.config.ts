@@ -1,4 +1,4 @@
-import { ShoppingCart, Bell, User, Bookmark } from "@/assets/icons";
+import { ShoppingCart, Bell, User, Bookmark, ShieldUser } from "@/assets/icons";
 import type { LucideIcon } from "lucide-react";
 
 export interface HeaderIcon {
@@ -21,5 +21,11 @@ export const headerIcons: HeaderIcon[] = [
     icon: Bell,
     label: "Notifications",
     href: "/notifications",
+  },
+  {
+    id: "admin",
+    icon: ShieldUser,
+    label: "Admin",
+    href: "/admin/dashboard",
   },
 ];

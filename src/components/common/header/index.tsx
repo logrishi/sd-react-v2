@@ -1,8 +1,10 @@
 import { useNavigate, useLocation, type FC } from "@/lib/vendors";
 import { Button } from "@/components/common/ui/button";
-import { ChevronLeft } from "@/assets/icons";
+import { ChevronLeft, ShieldUser } from "@/assets/icons";
 import { headerIcons } from "@/lib/config/header-icons.config";
 import { cn } from "@/lib/utils/utils";
+import { store } from "@/services/store";
+import * as Icons from "@/assets/icons";
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -42,6 +44,11 @@ export const Header: FC<HeaderProps> = ({
             const icon = headerIcons.find((i) => i.id === iconId);
             if (!icon) return null;
 
+            // Skip admin icon if user is not an admin
+            if (icon.id === "admin" && !store.auth.get().isAdmin) {
+              return null;
+            }
+
             return (
               <Button
                 key={icon.id}
@@ -55,7 +62,11 @@ export const Header: FC<HeaderProps> = ({
                   }
                 }}
               >
-                <icon.icon className="h-5 w-5" />
+                {icon.id === "admin" ? (
+                  <ShieldUser className="h-6 w-6 text-red-500" />
+                ) : (
+                  <icon.icon className="h-5 w-5" />
+                )}
               </Button>
             );
           })}

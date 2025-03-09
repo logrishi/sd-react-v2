@@ -6,9 +6,11 @@ import { Play, Pause, SkipBack, SkipForward, Volume2 } from "@/assets/icons";
 interface AudioPlayerProps {
   audioUrl: string;
   title?: string;
+  miniPlayer?: boolean;
+  onPlayStateChange?: (isPlaying: boolean) => void;
 }
 
-const AudioPlayer: FC<AudioPlayerProps> = ({ audioUrl, title }) => {
+const AudioPlayer: FC<AudioPlayerProps> = ({ audioUrl, title, miniPlayer = false, onPlayStateChange }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -36,14 +38,24 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ audioUrl, title }) => {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const handlePlayPause = () => {
+  const handlePlayPause = (e?: React.MouseEvent) => {
+    // Prevent the event from bubbling up to parent elements (like forms)
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
         audioRef.current.play();
       }
-      setIsPlaying(!isPlaying);
+      const newPlayingState = !isPlaying;
+      setIsPlaying(newPlayingState);
+      if (onPlayStateChange) {
+        onPlayStateChange(newPlayingState);
+      }
     }
   };
 
@@ -73,13 +85,33 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ audioUrl, title }) => {
     }
   };
 
+  if (miniPlayer) {
+    return (
+      <div className="inline-block">
+        <audio ref={audioRef} src={audioUrl} />
+        <Button 
+          onClick={handlePlayPause}
+          type="button" // Explicitly set type to button to prevent form submission
+          className={`h-10 w-10 rounded-full p-0 ${isPlaying ? 'bg-primary' : 'bg-primary/10'}`}
+          variant={isPlaying ? 'default' : 'ghost'}
+        >
+          {isPlaying ? 
+            <Pause className={`h-5 w-5 ${isPlaying ? 'text-white' : 'text-primary'}`} /> : 
+            <Play className="h-5 w-5 text-primary ml-1" />}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg bg-white p-4 shadow-md">
       <audio ref={audioRef} src={audioUrl} />
 
-      <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-700">{title}</h3>
-      </div>
+      {title && (
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-700">{title}</h3>
+        </div>
+      )}
 
       <div className="mb-4">
         <Slider value={[currentTime]} min={0} max={duration} step={1} onValueChange={handleSeek} className="w-full" />
@@ -91,13 +123,37 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ audioUrl, title }) => {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleSkipBack} className="h-8 w-8 rounded-full p-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSkipBack();
+            }} 
+            type="button"
+            className="h-8 w-8 rounded-full p-0"
+          >
             <SkipBack className="h-4 w-4" />
           </Button>
-          <Button onClick={handlePlayPause} className="h-10 w-10 rounded-full p-0">
+          <Button 
+            onClick={handlePlayPause} 
+            type="button" // Explicitly set type to button to prevent form submission
+            className="h-10 w-10 rounded-full p-0"
+          >
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleSkipForward} className="h-8 w-8 rounded-full p-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSkipForward();
+            }} 
+            type="button"
+            className="h-8 w-8 rounded-full p-0"
+          >
             <SkipForward className="h-4 w-4" />
           </Button>
         </div>

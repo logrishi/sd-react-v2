@@ -1,9 +1,46 @@
 import { Card } from "@/components/common/ui/card";
 import { Button } from "@/components/common/ui/button";
 import { store } from "@/services/store";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getBooks } from "@/services/backend/actions";
+
+interface Book {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  image: string;
+  book: string;
+  audio?: string;
+  is_free: boolean;
+  is_deleted: boolean;
+}
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const user: any = store.auth.get().user;
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        const response = await getBooks();
+        if (!response.err) {
+          setBooks(response.result || []);
+        }
+      } catch (error) {
+        console.error("Error fetching books:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBooks();
+  }, []);
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -17,37 +54,16 @@ const Dashboard = () => {
           <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <span className="block text-2xl font-bold text-primary">12</span>
-              <span className="text-sm text-muted-foreground">Total Items</span>
+              <span className="block text-2xl font-bold text-primary">{loading ? "..." : books.length}</span>
+              <span className="text-sm text-muted-foreground">Total Books</span>
             </div>
             <div className="text-center">
-              <span className="block text-2xl font-bold text-primary">5</span>
-              <span className="text-sm text-muted-foreground">In Progress</span>
+              <span className="block text-2xl font-bold text-primary">{loading ? "..." : books.length}</span>
+              <span className="text-sm text-muted-foreground">PDF Books</span>
             </div>
             <div className="text-center">
-              <span className="block text-2xl font-bold text-primary">7</span>
-              <span className="text-sm text-muted-foreground">Completed</span>
-            </div>
-          </div>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">📚</span>
-              <div>
-                <p className="font-medium">Started reading "React Patterns"</p>
-                <span className="text-sm text-muted-foreground">2 hours ago</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">✅</span>
-              <div>
-                <p className="font-medium">Completed "TypeScript Basics"</p>
-                <span className="text-sm text-muted-foreground">1 day ago</span>
-              </div>
+              <span className="block text-2xl font-bold text-primary">{loading ? "..." : books.filter(b => b.audio).length}</span>
+              <span className="text-sm text-muted-foreground">Audio Books</span>
             </div>
           </div>
         </Card>
@@ -56,21 +72,21 @@ const Dashboard = () => {
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center"
+              onClick={() => navigate("/admin/add-book")}
+            >
               <span className="text-2xl mb-1">➕</span>
-              Add New Item
+              Add New Book
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center"
+              onClick={() => navigate("/admin/books")}
+            >
               <span className="text-2xl mb-1">🔍</span>
-              Browse Library
-            </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
-              <span className="text-2xl mb-1">📊</span>
-              View Reports
-            </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
-              <span className="text-2xl mb-1">⚙️</span>
-              Settings
+              Manage Books
             </Button>
           </div>
         </Card>

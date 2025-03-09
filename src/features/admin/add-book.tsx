@@ -1,0 +1,523 @@
+import { type FC, useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/ui/card";
+import { Input } from "@/components/common/ui/input";
+import { Label } from "@/components/common/ui/label";
+import { Button } from "@/components/common/ui/button";
+import { Textarea } from "@/components/common/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/common/ui/select";
+import { Checkbox } from "@/components/common/ui/checkbox";
+import { useNavigate, useParams } from "react-router-dom";
+import { IndianRupee, FileText, Headphones, Image, Upload, Loader2, Eye } from "lucide-react";
+import { getEnvVar } from "@/lib/utils/env-vars";
+import { createBook, getBook, updateBook, uploadMedia } from "@/services/backend/actions";
+import AudioPlayer from "@/components/common/audio-player";
+
+interface BookFormData {
+  name: string;
+  description: string;
+  category: string;
+  price: string;
+  image: string;
+  book: string;
+  audio: string;
+  is_free: boolean;
+  is_deleted: boolean;
+}
+
+const AddBook: FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
+
+  const [formData, setFormData] = useState<BookFormData>({
+    name: "",
+    description: "",
+    category: "",
+    price: "",
+    image: "",
+    book: "",
+    audio: "",
+    is_free: false,
+    is_deleted: false,
+  });
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [bookFile, setBookFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+
+  const [imagePreview, setImagePreview] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // Fetch product data if in edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      const fetchBook = async () => {
+        try {
+          setLoading(true);
+          const response = await getBook(id);
+          if (!response.err && response.result) {
+            const book = response.result[0];
+            setFormData({
+              name: book.name || "",
+              description: book.description || "",
+              category: book.category || "",
+              price: book.price ? String(book.price) : "",
+              image: book.image || "",
+              book: book.book || "",
+              audio: book.audio || "test.mp3",
+              is_free: !!book.is_free,
+              is_deleted: !!book.is_deleted,
+            });
+
+            // Set image preview if available
+            if (book.image) {
+              const imageUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.image}`;
+              setImagePreview(imageUrl);
+            }
+          } else {
+            setError("Failed to load book data or book not found");
+          }
+        } catch (error) {
+          console.error("Error fetching book:", error);
+          setError("Failed to load book data");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchBook();
+    }
+  }, [id, isEditMode]);
+
+  // Clean up preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up any object URLs created for local file previews
+      if (imageFile && imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview, imageFile]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (value: string, name: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCheckboxChange = (checked: boolean, name: string) => {
+    setFormData((prev) => ({ ...prev, [name]: checked }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Clean up previous preview
+      if (imagePreview && !imagePreview.startsWith("http")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      // Create preview
+      const previewUrl = URL.createObjectURL(file);
+      setImageFile(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  const handleBookChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBookFile(file);
+    }
+  };
+
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAudioFile(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      // Validate required fields
+      if (!formData.name || !formData.category) {
+        setError("Name and category are required");
+        setLoading(false);
+        return;
+      }
+
+      // Handle file uploads
+      let imageUrl = formData.image;
+      let bookUrl = formData.book;
+      let audioUrl = formData.audio;
+
+      // Upload image if changed
+      if (imageFile) {
+        try {
+          // uploadMedia will automatically compress image files
+          const uploadResponse = await uploadMedia(imageFile, "books/images");
+          if (uploadResponse.err) {
+            throw new Error("Failed to upload image");
+          }
+          imageUrl = uploadResponse.result;
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          setError("Failed to upload image");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Upload book if changed
+      if (bookFile) {
+        try {
+          const uploadResponse = await uploadMedia(bookFile, "books/pdfs");
+          if (uploadResponse.err) {
+            throw new Error("Failed to upload book");
+          }
+          bookUrl = uploadResponse.result;
+        } catch (error) {
+          console.error("Error uploading book:", error);
+          setError("Failed to upload book");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Upload audio if changed
+      if (audioFile) {
+        try {
+          const uploadResponse = await uploadMedia(audioFile, "books/audio");
+          if (uploadResponse.err) {
+            throw new Error("Failed to upload audio");
+          }
+          audioUrl = uploadResponse.result;
+        } catch (error) {
+          console.error("Error uploading audio:", error);
+          setError("Failed to upload audio");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Prepare data for API
+      const bookData = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        price: formData.price ? parseFloat(formData.price) : 0,
+        image: imageUrl,
+        book: bookUrl,
+        audio: audioUrl,
+        is_free: formData.is_free,
+        is_deleted: formData.is_deleted,
+      };
+
+      // Create or update book
+      let response;
+      if (isEditMode) {
+        response = await updateBook(id, bookData);
+      } else {
+        response = await createBook(bookData);
+      }
+
+      if (response.err) {
+        throw new Error(response.err.message || "Failed to save book");
+      }
+
+      setSuccess(isEditMode ? "Book updated successfully" : "Book created successfully");
+
+      // Reset form if creating new product
+      if (!isEditMode) {
+        setFormData({
+          name: "",
+          description: "",
+          category: "",
+          price: "",
+          image: "",
+          book: "",
+          audio: "",
+          is_free: false,
+          is_deleted: false,
+        });
+        setImageFile(null);
+        setBookFile(null);
+        setAudioFile(null);
+        if (imagePreview) {
+          URL.revokeObjectURL(imagePreview);
+          setImagePreview("");
+        }
+      }
+
+      // Navigate back after a delay
+      setTimeout(() => {
+        navigate("/admin/books");
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="container max-w-3xl py-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>{isEditMode ? "Edit Book" : "Add New Book"}</CardTitle>
+          <CardDescription>
+            {isEditMode ? "Update the book information" : "Fill in the details to create a new book"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">{error}</div>}
+
+            {success && <div className="bg-green-100 text-green-800 p-3 rounded-md text-sm">{success}</div>}
+
+            <div className="space-y-4">
+              {/* Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  disabled={loading}
+                  rows={4}
+                />
+              </div>
+
+              {/* Category */}
+              <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => handleSelectChange(value, "category")}
+                  disabled={loading}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Books">Books</SelectItem>
+                    <SelectItem value="Magazines">Magazines</SelectItem>
+                    <SelectItem value="Newspapers">Newspapers</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Price */}
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (₹)</Label>
+                <div className="relative">
+                  <div className="absolute left-0 top-0 flex h-full w-10 items-center justify-center rounded-l-md bg-muted">
+                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={handleChange}
+                    className="pl-12"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="image">Cover Image</Label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="relative border rounded-md p-4 flex items-center hover:bg-muted/50 transition-colors">
+                    {imagePreview && (
+                      <div className="h-16 w-16 rounded-md overflow-hidden border flex-shrink-0 mr-4">
+                        <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                    <div
+                      className="flex-1 flex flex-col items-center justify-center cursor-pointer"
+                      onClick={() => document.getElementById("image")?.click()}
+                    >
+                      <Image className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mt-2 text-center">
+                        {imagePreview
+                          ? `${isEditMode && formData.image ? "Change" : "Replace"} cover image`
+                          : "Upload cover image"}
+                      </p>
+                      {isEditMode && formData.image && imagePreview && (
+                        <p className="text-xs text-muted-foreground mt-1 text-center truncate max-w-[200px]">
+                          Current: {formData.image.split("/").pop()}
+                        </p>
+                      )}
+                    </div>
+                    <input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      disabled={loading}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* PDF Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="book">PDF Document</Label>
+                <div className="relative border rounded-md p-4 flex items-center hover:bg-muted/50 transition-colors">
+                  {formData.book && (
+                    <div
+                      className="h-12 w-12 rounded-full bg-blue-100 flex-shrink-0 mr-4 flex items-center justify-center cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Open PDF in new tab
+                        if (formData.book) {
+                          const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${formData.book}`;
+                          window.open(pdfUrl, "_blank");
+                        }
+                      }}
+                    >
+                      <Eye className="h-6 w-6 text-blue-600" />
+                    </div>
+                  )}
+                  <div
+                    className="flex-1 flex flex-col items-center justify-center cursor-pointer"
+                    onClick={() => document.getElementById("book")?.click()}
+                  >
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mt-2 text-center">
+                      {bookFile
+                        ? bookFile.name
+                        : formData.book
+                          ? isEditMode
+                            ? `Current PDF: ${formData.book.split("/").pop() || "document.pdf"} (click to change)`
+                            : "PDF already uploaded (click to change)"
+                          : "Upload PDF document"}
+                    </p>
+                  </div>
+                  <input
+                    id="book"
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleBookChange}
+                    disabled={loading}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Audio Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="audio">Audio File</Label>
+                <div className="relative border rounded-md p-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center w-full">
+                    {formData.audio && (
+                      <div className="flex-shrink-0 mr-4">
+                        <AudioPlayer 
+                          audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/audio/${formData.audio}`} 
+                          miniPlayer={true}
+                        />
+                      </div>
+                    )}
+                    <div
+                      className="flex-1 flex flex-col items-center justify-center cursor-pointer"
+                      onClick={() => document.getElementById("audio")?.click()}
+                    >
+                      <Headphones className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mt-2 text-center">
+                        {audioFile
+                          ? audioFile.name
+                          : formData.audio
+                            ? isEditMode
+                              ? `Current Audio: ${formData.audio.split("/").pop() || "audio.mp3"} (click to change)`
+                              : "Audio already uploaded (click to play/change)"
+                            : "Upload audio file"}
+                      </p>
+                    </div>
+                    <input
+                      id="audio"
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleAudioChange}
+                      disabled={loading}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Checkboxes */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_free"
+                    checked={formData.is_free}
+                    onCheckedChange={(checked) => handleCheckboxChange(checked as boolean, "is_free")}
+                    disabled={loading}
+                  />
+                  <Label htmlFor="is_free" className="cursor-pointer">
+                    Free Book
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_deleted"
+                    checked={formData.is_deleted}
+                    onCheckedChange={(checked) => handleCheckboxChange(checked as boolean, "is_deleted")}
+                    disabled={loading}
+                  />
+                  <Label htmlFor="is_deleted" className="cursor-pointer">
+                    Mark as Deleted
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => navigate("/admin/books")} disabled={loading}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditMode ? "Update Book" : "Create Book"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AddBook;

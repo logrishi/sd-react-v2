@@ -315,15 +315,20 @@ export async function updateOrder(id: string, data: any, options = {}) {
   }
 }
 
-export async function uploadMedia(image: File, folderName: string) {
+export async function uploadMedia(file: File, folderName: string) {
   const formData = new FormData();
+  let fileToUpload = file;
 
-  const compressed = await compressImage(image);
-  if (!compressed) throw new Error("Failed to compress image");
+  // Only compress if it's an image file
+  if (file.type.startsWith('image/')) {
+    const compressed = await compressImage(file);
+    if (!compressed) throw new Error("Failed to compress image");
+    fileToUpload = compressed;
+  }
 
   const appName = import.meta.env.VITE_UPLOAD_DIR.split(" ").join("-").toLocaleLowerCase();
   formData.append("folder", `${appName}/${folderName}`);
-  formData.append("image", compressed);
+  formData.append("image", fileToUpload);
 
   const { data } = await axios.post(import.meta.env.VITE_IMAGE_UPLOAD_URL!, formData, {
     headers: {

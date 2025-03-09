@@ -152,7 +152,7 @@ const BookDetails: FC = () => {
       />
       <div className="mb-8 flex items-start justify-between"></div>
 
-      <div className="mb-8 grid gap-8">
+      <div className="mb-4 grid gap-4">
         <div className="relative h-[400px] overflow-hidden rounded-lg">
           <Image
             src={`${getEnvVar("VITE_IMAGE_URL")}/${book.image}`}
@@ -227,11 +227,15 @@ const BookDetails: FC = () => {
             {book.audio ? (
               (() => {
                 const { canAccess, message, showSubscribeSheet: shouldShow } = checkAccess();
+                const audioUrl = `${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio}`;
+                
                 if (canAccess) {
-                  return <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio}`} />;
+                  return <AudioPlayer audioUrl={audioUrl} />;
                 } else {
                   return (
-                    <div
+                    <Button
+                      className="w-full"
+                      size="lg"
                       onClick={() => {
                         if (shouldShow) {
                           setSubscribeMessage(message);
@@ -239,8 +243,8 @@ const BookDetails: FC = () => {
                         }
                       }}
                     >
-                      <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio}`} />
-                    </div>
+                      Listen Now
+                    </Button>
                   );
                 }
               })()

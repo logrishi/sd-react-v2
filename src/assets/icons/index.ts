@@ -25,6 +25,13 @@ import {
   Bell,
   Star,
   StarHalf,
+  Edit,
+  Trash2,
+  Plus,
+  Headphones,
+  HeadphoneOff,
+  Eye,
+  ShieldUser,
 } from "lucide-react";
 
 // Export all icons
@@ -54,4 +61,11 @@ export {
   Bell,
   Star,
   StarHalf,
+  Edit,
+  Trash2,
+  Plus,
+  Headphones,
+  HeadphoneOff,
+  Eye,
+  ShieldUser,
 };

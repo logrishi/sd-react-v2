@@ -70,7 +70,7 @@ const Bookmark: FC = () => {
                   <Card
                     key={book.id}
                     className="group overflow-hidden cursor-pointer"
-                    onClick={() => navigate(`/product/${book.id}`)}
+                    onClick={() => navigate(`/book/${book.id}`)}
                   >
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <img
