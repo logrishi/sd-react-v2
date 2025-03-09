@@ -14,18 +14,7 @@ export interface RouteConfig {
     showBackButton?: boolean;
     headerTitle?: string;
     headerRightIcons?: string[];
-    banner?: {
-      // Component to render in the banner
-      component: () => Promise<{ default: ComponentType<any> } | ComponentType<any>>;
-      // Banner configuration
-      config?: {
-        position?: "bottom" | "bottom-with-tabs" | "center" | "top";
-        showBackdrop?: boolean;
-        dismissible?: boolean;
-        persistent?: boolean;
-        showCloseButton?: boolean;
-      };
-    };
+    // Banner configuration removed - banners are now imported directly in pages
   };
 }
 
@@ -53,16 +42,7 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       showBottomTabs: true,
-      banner: {
-        component: () => import("@/components/common/subscribe-sheet").then((m) => m.SubscribeSheet),
-        config: {
-          position: "bottom-with-tabs",
-          showBackdrop: false,
-          dismissible: false,
-          persistent: true,
-          showCloseButton: false,
-        },
-      },
+      // Banner configuration removed - SubscribeSheet is now imported directly in pages
     },
   },
   {

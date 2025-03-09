@@ -7,7 +7,7 @@ import { Header } from "@/components/common/header";
 import { useLocation } from "react-router-dom";
 import { routes } from "@/routes";
 import { headerIcons } from "@/lib/config/header-icons.config";
-import { BannerProvider } from "./banner-provider";
+import { Footer } from "../common/footer";
 
 interface LayoutProps {
   children?: ReactNode;
@@ -30,6 +30,7 @@ export const Layout: FC<LayoutProps> = ({
   headerTitle: propHeaderTitle,
   headerRightIcons: propHeaderRightIcons,
 }) => {
+
   const location = useLocation();
   const currentRoute = routes.find((route) => {
     // Convert route path to regex to handle dynamic segments
@@ -65,11 +66,9 @@ export const Layout: FC<LayoutProps> = ({
         >
           <main
             className="flex-1 py-6 overflow-y-auto"
-            style={{ 
-              paddingBottom: showBottomTabs ? 
-                // Add extra padding if we have bottom tabs and banner
-                currentRoute?.layoutProps?.banner ? '120px' : '80px' 
-                : undefined 
+            style={{
+              // Add padding for bottom tabs on mobile
+              paddingBottom: showBottomTabs ? "80px" : undefined,
             }}
           >
             <div className="app-container">{children ? children : <Outlet />}</div>
@@ -77,13 +76,7 @@ export const Layout: FC<LayoutProps> = ({
 
           {/* Desktop Footer */}
           {showFooter && (
-            <footer className="hidden lg:block border-t">
-              <div className="app-container py-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  &copy; {new Date().getFullYear()} Saraighat Digital. All rights reserved.
-                </p>
-              </div>
-            </footer>
+            <Footer />
           )}
         </div>
 
@@ -102,10 +95,8 @@ export const Layout: FC<LayoutProps> = ({
     </div>
   );
 
-  // Wrap with BannerProvider only if we're not in a banner component
-  // This prevents infinite recursion when banner components try to render
-  const isBannerRoute = currentRoute?.layoutProps?.banner?.component !== undefined;
-  return isBannerRoute ? content : <BannerProvider>{content}</BannerProvider>;
+  // Return the content directly without wrapping in BannerProvider
+  return content;
 };
 
 export default Layout;

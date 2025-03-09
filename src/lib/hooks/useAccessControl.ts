@@ -3,7 +3,7 @@ import { store } from "@/services/store";
 export type AccessStatus = {
   canAccess: boolean;
   message: string;
-  showSubscribeSheet: boolean;
+  // showSubscribeSheet flag removed
 };
 
 export const useAccessControl = () => {
@@ -14,7 +14,6 @@ export const useAccessControl = () => {
       return {
         canAccess: false,
         message: "Subscribe today to gain access to e-books and audio books",
-        showSubscribeSheet: true,
       };
     }
 
@@ -22,7 +21,6 @@ export const useAccessControl = () => {
       return {
         canAccess: false,
         message: "Your account has been deleted. Please contact support.",
-        showSubscribeSheet: false,
       };
     }
 
@@ -30,7 +28,6 @@ export const useAccessControl = () => {
       return {
         canAccess: false,
         message: "Subscribe today to gain access to e-books and audio books",
-        showSubscribeSheet: true,
       };
     }
 
@@ -38,14 +35,12 @@ export const useAccessControl = () => {
       return {
         canAccess: false,
         message: "Your subscription has expired! Renew today to continue access to e-books and audio books",
-        showSubscribeSheet: true,
       };
     }
 
     return {
       canAccess: true,
       message: "",
-      showSubscribeSheet: false,
     };
   };
 

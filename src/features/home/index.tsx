@@ -4,10 +4,10 @@ import { Button } from "@/components/common/ui/button";
 import { Input } from "@/components/common/ui/input";
 import { Card, CardContent, CardTitle, CardDescription, CardHeader, CardFooter } from "@/components/common/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
-import { SearchIcon, BellIcon, Share2Icon, BookmarkIcon, ChevronRightIcon, BookOpen, Headphones } from "lucide-react";
+import { SearchIcon, BellIcon, Share2Icon, BookmarkIcon, ChevronRightIcon, BookOpen, Headphones, AlertTriangle } from "lucide-react";
 import { store } from "@/services/store";
 import { useEffect, useState } from "react";
-import { SubscribeSheet } from "@/components/common/subscribe-sheet";
+import { SubscribeSheet } from "@/components/common/banner/subscribe-sheet";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import { getBooks } from "@/services/backend/actions";
 import { sanitizeText } from "@/lib/utils/text-utils";
@@ -16,6 +16,7 @@ import { Badge } from "@/components/common/ui/badge";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { useNavigate } from "react-router-dom";
 import { homeBanner } from "@/assets/images";
+import { Alert, AlertDescription, AlertTitle } from "@/components/common/ui/alert";
 
 interface Book {
   id: number;
@@ -28,19 +29,30 @@ interface Book {
 const Home: FC = () => {
   const { books, searchQuery, selectedCategory } = store.library();
   const [loading, setLoading] = useState(false);
-  const [showSubscribeSheet, setShowSubscribeSheet] = useState(false);
-  const [subscribeMessage, setSubscribeMessage] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
   const { checkAccess } = useAccessControl();
   const navigate = useNavigate();
+  const { isLoggedIn, isSubscribed, isSubscriptionExpired } = store.auth.get();
 
-  // Check access when component mounts
+  // Check access status and set alert message
   useEffect(() => {
-    const { message, showSubscribeSheet: shouldShow } = checkAccess();
-    if (shouldShow) {
-      setSubscribeMessage(message);
-      setShowSubscribeSheet(true);
+    const { canAccess, message } = checkAccess();
+    
+    if (!canAccess) {
+      setShowAlert(true);
+      
+      if (!isLoggedIn || !isSubscribed) {
+        setAlertMessage("Subscribe to gain access to e-books and audiobooks");
+      } else if (isSubscriptionExpired) {
+        setAlertMessage("Renew your subscription to continue access to e-books and audiobooks");
+      } else {
+        setAlertMessage(message);
+      }
+    } else {
+      setShowAlert(false);
     }
-  }, []);
+  }, [isLoggedIn, isSubscribed, isSubscriptionExpired]);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -100,16 +112,33 @@ const Home: FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Main Content */}
-      <main className="flex-1">
-        {/* Bottom Sheet */}
-        <SubscribeSheet
-          isOpen={showSubscribeSheet}
-          onClose={() => setShowSubscribeSheet(false)}
-          message={subscribeMessage}
-          persistent={true}
-          hasBottomTabs={true}
-        />
+      <main className="flex-1 relative">
         <div className="container py-6 space-y-4">
+          {/* Subscription Alert */}
+          {showAlert && (
+            <Alert className="mb-4 border-amber-500 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+              <div className="flex items-start md:items-center">
+                <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-amber-500 mr-2 flex-shrink-0 mt-0.5 md:mt-0" />
+                <AlertDescription className="text-foreground">
+                  {alertMessage}
+                </AlertDescription>
+              </div>
+              <Button 
+                size="sm" 
+                variant="default" 
+                className="bg-amber-500 hover:bg-amber-600 w-full md:w-auto"
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    navigate('/login');
+                  } else {
+                    navigate('/payments');
+                  }
+                }}
+              >
+                Subscribe Now
+              </Button>
+            </Alert>
+          )}
           {/* Banner */}
           <section>
             <div className="flex items-center justify-between mb-4">
@@ -119,15 +148,11 @@ const Home: FC = () => {
               <Card className="text-white overflow-hidden shadow-lg relative h-[260px]">
                 {/* Full-screen background image */}
                 <div className="absolute inset-0 w-full h-full">
-                  <img
-                    src={homeBanner}
-                    alt="Digital reading experience"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={homeBanner} alt="Digital reading experience" className="w-full h-full object-cover" />
                   {/* Dark overlay */}
                   <div className="absolute inset-0 bg-black/60"></div>
                 </div>
-                
+
                 {/* Content */}
                 <CardContent className="relative z-10 grid grid-cols-1 md:grid-cols-2 p-6 h-full">
                   <div className="space-y-4 flex flex-col justify-center">
@@ -246,6 +271,8 @@ const Home: FC = () => {
           </section>
         </div>
       </main>
+      
+      {/* SubscribeSheet removed */}
     </div>
   );
 };

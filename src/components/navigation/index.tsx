@@ -8,9 +8,16 @@ interface NavigationProps {
   variant?: "left" | "right" | "bottom";
   activePath?: string;
   onNavigate?: (path: string) => void;
+  children?: React.ReactNode; // For banner content
 }
 
-const Navigation: FC<NavigationProps> = ({ config, variant = "left", activePath, onNavigate }) => {
+const Navigation: FC<NavigationProps> = ({ 
+  config, 
+  variant = "left", 
+  activePath, 
+  onNavigate,
+  children 
+}) => {
   const props = { config, activePath, onNavigate };
 
   switch (variant) {
@@ -19,7 +26,7 @@ const Navigation: FC<NavigationProps> = ({ config, variant = "left", activePath,
     case "right":
       return <Sidebar {...props} orientation="right" />;
     case "bottom":
-      return <BottomTabs {...props} />;
+      return <BottomTabs {...props} children={children} />;
     default:
       return null;
   }

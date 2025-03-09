@@ -3,7 +3,7 @@ import { Bookmark } from "@/assets/icons";
 import { store } from "@/services/store";
 import { Button } from "@/components/common/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
-import { SubscribeSheet } from "@/components/common/subscribe-sheet";
+import { SubscribeSheet } from "@/components/common/banner/subscribe-sheet";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import Rating from "@/components/common/rating";
 import AudioPlayer from "@/components/common/audio-player";
@@ -13,6 +13,17 @@ import { Image } from "@/components/common/image";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import BookSkeleton from "@/features/home/components/book-details-skeleton";
 import PdfViewer from "@/components/pdf-viewer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/common/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 interface Review {
   id: string;
@@ -38,17 +49,19 @@ interface BookDetails {
 
 const BookDetails: FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("about");
   const [book, setBook] = useState<BookDetails | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSubscribeSheet, setShowSubscribeSheet] = useState(false);
+  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
   const [subscribeMessage, setSubscribeMessage] = useState("");
   const { checkAccess } = useAccessControl();
   const [isPdfVisible, setIsPdfVisible] = useState(false);
   const [pdfSource, setPdfSource] = useState("");
+  const { isLoggedIn, isSubscribed, isSubscriptionExpired } = store.auth.get();
   const [optimisticReviews, addOptimisticReview] = useOptimistic(reviews, (state: Review[], newReview: Review) => [
     ...state,
     newReview,
@@ -143,13 +156,6 @@ const BookDetails: FC = () => {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
-      <SubscribeSheet
-        isOpen={showSubscribeSheet}
-        onClose={() => setShowSubscribeSheet(false)}
-        message={subscribeMessage}
-        persistent={false}
-        hasBottomTabs={false}
-      />
       <div className="mb-8 flex items-start justify-between"></div>
 
       <div className="mb-4 grid gap-4">
@@ -197,7 +203,7 @@ const BookDetails: FC = () => {
               className="w-full"
               size="lg"
               onClick={async () => {
-                const { canAccess, message, showSubscribeSheet: shouldShow } = checkAccess();
+                const { canAccess, message } = checkAccess();
                 if (canAccess) {
                   try {
                     const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
@@ -212,9 +218,10 @@ const BookDetails: FC = () => {
                     console.error("Error accessing PDF:", error);
                     // Handle error appropriately
                   }
-                } else if (shouldShow) {
+                } else {
+                  // Show subscribe dialog
                   setSubscribeMessage(message);
-                  setShowSubscribeSheet(true);
+                  setShowSubscribeDialog(true);
                 }
               }}
             >
@@ -226,9 +233,9 @@ const BookDetails: FC = () => {
             <h2 className="mb-4 text-xl font-semibold">Listen to Audio Book</h2>
             {book.audio ? (
               (() => {
-                const { canAccess, message, showSubscribeSheet: shouldShow } = checkAccess();
+                const { canAccess } = checkAccess();
                 const audioUrl = `${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio}`;
-                
+
                 if (canAccess) {
                   return <AudioPlayer audioUrl={audioUrl} />;
                 } else {
@@ -237,10 +244,9 @@ const BookDetails: FC = () => {
                       className="w-full"
                       size="lg"
                       onClick={() => {
-                        if (shouldShow) {
-                          setSubscribeMessage(message);
-                          setShowSubscribeSheet(true);
-                        }
+                        const { message } = checkAccess();
+                        setSubscribeMessage(message);
+                        setShowSubscribeDialog(true);
                       }}
                     >
                       Listen Now
@@ -281,14 +287,41 @@ const BookDetails: FC = () => {
         </TabsContent>
       </Tabs>
       {isPdfVisible && (
-        <PdfViewer 
-          pdfSource={pdfSource} 
+        <PdfViewer
+          pdfSource={pdfSource}
           onClose={() => {
             setIsPdfVisible(false);
             setPdfSource("");
-          }} 
+          }}
         />
       )}
+      
+      {/* Subscribe Dialog */}
+      <AlertDialog open={showSubscribeDialog} onOpenChange={setShowSubscribeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Subscription Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              {subscribeMessage || "Subscribe to access this content"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!isLoggedIn) {
+                  navigate("/login");
+                } else if (!isSubscribed || isSubscriptionExpired) {
+                  navigate("/payments");
+                }
+                setShowSubscribeDialog(false);
+              }}
+            >
+              Subscribe
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
