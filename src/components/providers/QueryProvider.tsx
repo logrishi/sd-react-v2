@@ -1,8 +1,7 @@
-import { type ReactNode, useEffect } from 'react';
-import { QueryClientProvider, type DehydratedState } from '@tanstack/react-query';
-import { hydrate } from '@tanstack/react-query';
-import { queryClient } from '@/services/backend/react-query-wrapper';
-import { QuerySuspense } from '@/components/common';
+import { type ReactNode, useEffect } from "react";
+import { QueryClientProvider, type DehydratedState } from "@tanstack/react-query";
+import { hydrate } from "@tanstack/react-query";
+import { queryClient } from "@/services/backend/react-query-wrapper";
 
 type QueryProviderProps = {
   children: ReactNode;
@@ -11,12 +10,7 @@ type QueryProviderProps = {
   errorFallback?: ReactNode;
 };
 
-export function QueryProvider({ 
-  children, 
-  dehydratedState,
-  loadingFallback,
-  errorFallback 
-}: QueryProviderProps) {
+export function QueryProvider({ children, dehydratedState, loadingFallback, errorFallback }: QueryProviderProps) {
   useEffect(() => {
     if (dehydratedState) {
       hydrate(queryClient, dehydratedState);
@@ -25,9 +19,9 @@ export function QueryProvider({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <QuerySuspense fallback={loadingFallback} errorFallback={errorFallback}>
+      {/* <QuerySuspense fallback={loadingFallback} errorFallback={errorFallback}>
         {children}
-      </QuerySuspense>
+      </QuerySuspense> */}
     </QueryClientProvider>
   );
 }

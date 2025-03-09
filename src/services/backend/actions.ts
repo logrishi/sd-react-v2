@@ -64,6 +64,7 @@ export function handleLoginSuccess(loginResponse: any) {
   store.auth.set({
     isLoggedIn: true,
     user: {
+      id: result.id,
       name: result.name,
       email: result.email,
       image: result.image,
@@ -71,6 +72,7 @@ export function handleLoginSuccess(loginResponse: any) {
     },
     session,
     isAdmin: result.is_admin,
+    isDeleted: result.is_deleted,
     expiryDate: result.expiry_date,
     isSubscribed,
     isSubscriptionExpired,
@@ -86,9 +88,10 @@ export function handleLoginSuccess(loginResponse: any) {
 export function handleLogout() {
   store.auth.set({
     isLoggedIn: false,
-    user: { name: "", email: "", image: "", password: "" },
+    user: { id: "", name: "", email: "", image: "", password: "" },
     session: null,
     isAdmin: false,
+    isDeleted: false,
     expiryDate: null,
     isSubscribed: false,
     isSubscriptionExpired: false,
@@ -105,7 +108,7 @@ export async function login(
   credentials: { email: string; password: string },
   options = {
     fields:
-      "id, name, email, image, password, expiry_date, is_admin, update_password, force_logout, force_password_reset,last_login",
+      "id, name, email, image, password, expiry_date, is_admin, is_deleted, update_password, force_logout, force_password_reset,last_login",
   }
 ) {
   try {

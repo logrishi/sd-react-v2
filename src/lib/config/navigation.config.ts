@@ -21,9 +21,9 @@ export const navigationConfig: NavigationItem[] = [
     },
   },
   {
-    icon: "Library",
-    label: "Orders",
-    path: "/orders",
+    icon: "Bookmark",
+    label: "Bookmarks",
+    path: "/bookmarks",
     requireAuth: true,
     position: {
       bottom: true,

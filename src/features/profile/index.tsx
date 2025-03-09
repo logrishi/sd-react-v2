@@ -7,7 +7,21 @@ import { Separator } from "@/components/common/ui/separator";
 import { Switch } from "@/components/common/ui/switch";
 import { store } from "@/services/store";
 import { useState, useEffect } from "react";
-import { Mail, User, Lock, Shield, HelpCircle, ExternalLink, PencilLine, Camera, LogOut } from "lucide-react";
+import {
+  Mail,
+  User,
+  Lock,
+  Shield,
+  HelpCircle,
+  ExternalLink,
+  PencilLine,
+  Camera,
+  LogOut,
+  Loader2,
+  Clock,
+  Check,
+  X,
+} from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/common/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import {
@@ -21,50 +35,132 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/common/ui/alert-dialog";
+import { Badge } from "@/components/common/ui/badge";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { navigateTo } from "@/lib/utils/navigate-to";
+import { handleLogout, updateUser, uploadMedia } from "@/services/backend/actions";
+import { compressImage } from "@/lib/utils/image-compression";
+
+dayjs.extend(relativeTime);
 
 const Profile: FC = () => {
   const navigate = useNavigate();
-  const { user = { name: "", email: "", image: "" }, isLoggedIn = false } = store.auth.get() ?? {};
+  const {
+    user = { id: "", name: "", email: "", image: "" },
+    isLoggedIn = false,
+    isSubscribed = false,
+    isSubscriptionExpired = false,
+    expiryDate = null,
+  } = store.auth.get() ?? {};
+  const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState("");
 
   // Redirect if not logged in
-  // useEffect(() => {
-  //   if (!isLoggedIn) {
-  //     navigate("/login");
-  //   }
-  // }, [isLoggedIn, navigate]);
-  const [isEditing, setIsEditing] = useState(false);
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate("/login");
+    }
+  }, [isLoggedIn, navigate]);
+
+  // Cleanup avatar preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    setError("");
+    setLoading(true);
 
-    // TODO: Implement profile update
-    setIsEditing(false);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+
+      // Input validation
+      if (!name || !email) {
+        setError("Please fill in all required fields");
+        return;
+      }
+
+      let imageUrl = user.image;
+
+      // Handle avatar upload if changed
+      if (avatarFile) {
+        try {
+          // Compress image before upload
+          const compressedImage: any = await compressImage(avatarFile);
+          const uploadResponse = await uploadMedia(compressedImage, "avatars");
+          if (uploadResponse.err) {
+            throw new Error("Failed to upload avatar");
+          }
+          imageUrl = uploadResponse.result;
+        } catch (error) {
+          console.error("Error uploading avatar:", error);
+          setError("Failed to upload avatar. Please try again.");
+          return;
+        }
+      }
+
+      // Update user profile
+      const updateResponse = await updateUser(user.id, {
+        name,
+        email,
+        image: imageUrl,
+      });
+
+      if (updateResponse.err) {
+        throw new Error("Failed to update profile");
+      }
+
+      // Update local store
+      const currentAuth = store.auth.get();
+      store.auth.set({
+        ...currentAuth,
+        user: {
+          ...currentAuth.user,
+          name,
+          email,
+          image: imageUrl,
+        },
+      });
+
+      setIsEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview("");
+    } catch (err: any) {
+      setError(err.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // TODO: Implement avatar upload
-      const tempUrl = URL.createObjectURL(file);
-      // setAvatarUrl(tempUrl);
+      // Cleanup previous preview
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+
+      // Create new preview
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarFile(file);
+      setAvatarPreview(previewUrl);
     }
   };
 
-  const handleLogout = () => {
-    store.auth.set({
-      isLoggedIn: false,
-      user: { name: "", email: "", image: "" },
-      session: null,
-      isAdmin: false,
-      expiryDate: null,
-      updatePassword: false,
-      forcePasswordReset: false,
-      forceLogout: false,
-      lastLogin: null,
-    });
+  const handleLogoutClick = () => {
+    handleLogout();
     navigate("/login");
   };
 
@@ -106,7 +202,7 @@ const Profile: FC = () => {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Logout
@@ -116,7 +212,7 @@ const Profile: FC = () => {
         </AlertDialog>
       </div>
 
-      <Card className="relative">
+      <Card className="relative mb-8">
         <Button
           type="button"
           size="icon"
@@ -135,8 +231,12 @@ const Profile: FC = () => {
             <div className="flex flex-col items-center justify-center min-h-[180px] space-y-4">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  {user.image ? (
-                    <AvatarImage src={`${getEnvVar("VITE_IMAGE_URL")}/${user.image}`} alt={user.name} />
+                  {avatarPreview || user.image ? (
+                    <AvatarImage
+                      src={avatarPreview || `${getEnvVar("VITE_IMAGE_URL")}/${user.image}`}
+                      alt={user.name}
+                      className="object-cover"
+                    />
                   ) : (
                     <AvatarFallback className="text-lg font-bold">
                       {user.name?.split(" ").length > 1
@@ -168,6 +268,8 @@ const Profile: FC = () => {
               )}
             </div>
 
+            {error && <div className="text-sm text-destructive">{error}</div>}
+
             <div className="space-y-4">
               <div className="relative">
                 <div className="absolute left-0 top-0 flex h-full w-10 items-center justify-center rounded-l-md bg-muted">
@@ -178,8 +280,9 @@ const Profile: FC = () => {
                   name="name"
                   defaultValue={user.name}
                   placeholder="Full Name"
-                  disabled={!isEditing}
+                  disabled={!isEditing || loading}
                   className="pl-12"
+                  required
                 />
               </div>
 
@@ -193,10 +296,36 @@ const Profile: FC = () => {
                   type="email"
                   defaultValue={user.email}
                   placeholder="Email"
-                  disabled={!isEditing}
+                  disabled={!isEditing || loading}
                   className="pl-12"
+                  required
                 />
               </div>
+
+              {isEditing && (
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setError("");
+                      setAvatarFile(null);
+                      if (avatarPreview) {
+                        URL.revokeObjectURL(avatarPreview);
+                        setAvatarPreview("");
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
+                </div>
+              )}
             </div>
 
             {isEditing && (
@@ -208,6 +337,62 @@ const Profile: FC = () => {
               </div>
             )}
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Subscription</CardTitle>
+              <CardDescription>Your current subscription status and details</CardDescription>
+            </div>
+            <Badge
+              variant={isSubscribed ? (!isSubscriptionExpired ? "success" : "destructive") : "warning"}
+              className="text-xs font-medium flex items-center gap-1"
+            >
+              {isSubscribed ? (
+                !isSubscriptionExpired ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Active
+                  </>
+                ) : (
+                  <>
+                    <X className="h-3 w-3" />
+                    Expired
+                  </>
+                )
+              ) : (
+                <>
+                  <Clock className="h-3 w-3" />
+                  Not Subscribed
+                </>
+              )}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {expiryDate && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    {isSubscriptionExpired ? "Expired" : "Expires"} {dayjs(expiryDate).fromNow()}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Expiry Date: {dayjs(expiryDate).format("MMM D, YYYY")}
+                </div>
+              </div>
+            )}
+            {(!isSubscribed || isSubscriptionExpired) && (
+              <Button variant="outline" className="w-full" onClick={() => navigate("/subscribe")}>
+                Subscribe Now
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -262,11 +447,8 @@ const Profile: FC = () => {
             If you're having trouble with your account or have questions, our support team is here to help
           </p>
           <div className="space-y-2">
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full text-destructive">
               Contact Support
-            </Button>
-            <Button variant="link" className="w-full">
-              View FAQs
             </Button>
           </div>
         </CardContent>

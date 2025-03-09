@@ -7,6 +7,7 @@ import { Header } from "@/components/common/header";
 import { useLocation } from "react-router-dom";
 import { routes } from "@/routes";
 import { headerIcons } from "@/lib/config/header-icons.config";
+import { BannerProvider } from "./banner-provider";
 
 interface LayoutProps {
   children?: ReactNode;
@@ -44,7 +45,7 @@ export const Layout: FC<LayoutProps> = ({
   const headerTitle = propHeaderTitle ?? currentRoute?.layoutProps?.headerTitle ?? APP_NAME;
   const headerRightIcons =
     propHeaderRightIcons ?? currentRoute?.layoutProps?.headerRightIcons ?? headerIcons.map((icon) => icon.id);
-  return (
+  const content = (
     <div className="flex flex-col min-h-screen bg-background layout-sidebar">
       {/* Header */}
       <Header showBackButton={showBackButton} title={headerTitle} rightIcons={headerRightIcons} />
@@ -64,7 +65,12 @@ export const Layout: FC<LayoutProps> = ({
         >
           <main
             className="flex-1 py-6 overflow-y-auto"
-            style={{ paddingBottom: showBottomTabs ? `${BOTTOM_CONTENT_PADDING}px` : undefined }}
+            style={{ 
+              paddingBottom: showBottomTabs ? 
+                // Add extra padding if we have bottom tabs and banner
+                currentRoute?.layoutProps?.banner ? '120px' : '80px' 
+                : undefined 
+            }}
           >
             <div className="app-container">{children ? children : <Outlet />}</div>
           </main>
@@ -87,14 +93,19 @@ export const Layout: FC<LayoutProps> = ({
 
       {/* Bottom Tabs (Mobile & Tablet) */}
       {showBottomTabs && (
-        <div className="lg:hidden border-t bg-background">
-          <div className="app-container">
+        <div className="lg:hidden border-t bg-background fixed bottom-0 left-0 right-0 z-[70]">
+          <div className="app-container py-2">
             <Navigation config={navigationConfig} variant="bottom" />
           </div>
         </div>
       )}
     </div>
   );
+
+  // Wrap with BannerProvider only if we're not in a banner component
+  // This prevents infinite recursion when banner components try to render
+  const isBannerRoute = currentRoute?.layoutProps?.banner?.component !== undefined;
+  return isBannerRoute ? content : <BannerProvider>{content}</BannerProvider>;
 };
 
 export default Layout;

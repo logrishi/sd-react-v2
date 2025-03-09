@@ -2,7 +2,7 @@ import { Card } from "@/components/common/ui/card";
 import { Button } from "@/components/common/ui/button";
 import { store } from "@/services/store";
 
-export const Dashboard = () => {
+const Dashboard = () => {
   const user: any = store.auth.get().user;
 
   return (
@@ -78,3 +78,5 @@ export const Dashboard = () => {
     </div>
   );
 };
+
+export default Dashboard;

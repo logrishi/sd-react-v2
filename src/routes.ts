@@ -1,4 +1,5 @@
 import { type FC } from "@/lib/vendors";
+import { type ComponentType } from "react";
 
 export interface RouteConfig {
   path: string;
@@ -12,6 +13,18 @@ export interface RouteConfig {
     showBackButton?: boolean;
     headerTitle?: string;
     headerRightIcons?: string[];
+    banner?: {
+      // Component to render in the banner
+      component: () => Promise<{ default: ComponentType<any> } | ComponentType<any>>;
+      // Banner configuration
+      config?: {
+        position?: "bottom" | "bottom-with-tabs" | "center" | "top";
+        showBackdrop?: boolean;
+        dismissible?: boolean;
+        persistent?: boolean;
+        showCloseButton?: boolean;
+      };
+    };
   };
 }
 
@@ -28,7 +41,19 @@ export const routes: RouteConfig[] = [
     path: "/",
     component: () => import("@/features/home"),
     isLazy: true,
-    layoutProps: {},
+    layoutProps: {
+      showBottomTabs: true,
+      banner: {
+        component: () => import("@/components/common/subscribe-sheet").then((m) => m.SubscribeSheet),
+        config: {
+          position: "bottom-with-tabs",
+          showBackdrop: false,
+          dismissible: false,
+          persistent: true,
+          showCloseButton: false,
+        },
+      },
+    },
   },
   {
     path: "/product/:id",
@@ -49,7 +74,7 @@ export const routes: RouteConfig[] = [
       showBackButton: false,
       headerTitle: "Login",
       headerRightIcons: [],
-      showBottomTabs: false,
+      showBottomTabs: true,
     },
   },
   {
@@ -60,7 +85,7 @@ export const routes: RouteConfig[] = [
       showBackButton: false,
       headerTitle: "Sign Up",
       headerRightIcons: [],
-      showBottomTabs: false,
+      showBottomTabs: true,
     },
   },
   {
@@ -90,6 +115,15 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       headerTitle: "My Profile",
+    },
+  },
+  {
+    path: "/dashboard",
+    component: () => import("@/features/dashboard"),
+    auth: true,
+    isLazy: true,
+    layoutProps: {
+      headerTitle: "Dashboard",
     },
   },
 ];

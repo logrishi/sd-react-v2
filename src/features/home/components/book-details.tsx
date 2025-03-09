@@ -3,6 +3,8 @@ import { Bookmark } from "@/assets/icons";
 import { store } from "@/services/store";
 import { Button } from "@/components/common/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
+import { SubscribeSheet } from "@/components/common/subscribe-sheet";
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import Rating from "@/components/common/rating";
 import AudioPlayer from "@/components/common/audio-player";
 import ReviewForm from "@/components/common/review-form";
@@ -10,6 +12,7 @@ import { getBook, getBookReviews, submitBookReview } from "@/services/backend/ac
 import { Image } from "@/components/common/image";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import BookSkeleton from "@/features/home/components/book-details-skeleton";
+import PdfViewer from "@/components/pdf-viewer";
 
 interface Review {
   id: string;
@@ -41,6 +44,11 @@ const BookDetails: FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSubscribeSheet, setShowSubscribeSheet] = useState(false);
+  const [subscribeMessage, setSubscribeMessage] = useState("");
+  const { checkAccess } = useAccessControl();
+  const [isPdfVisible, setIsPdfVisible] = useState(false);
+  const [pdfSource, setPdfSource] = useState("");
   const [optimisticReviews, addOptimisticReview] = useOptimistic(reviews, (state: Review[], newReview: Review) => [
     ...state,
     newReview,
@@ -135,6 +143,13 @@ const BookDetails: FC = () => {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
+      <SubscribeSheet
+        isOpen={showSubscribeSheet}
+        onClose={() => setShowSubscribeSheet(false)}
+        message={subscribeMessage}
+        persistent={false}
+        hasBottomTabs={false}
+      />
       <div className="mb-8 flex items-start justify-between"></div>
 
       <div className="mb-8 grid gap-8">
@@ -178,17 +193,57 @@ const BookDetails: FC = () => {
 
           <div className="rounded-lg border p-6 text-center">
             <h2 className="mb-4 text-xl font-semibold">Read Book</h2>
-            <a href={`${getEnvVar("VITE_IMAGE_URL")}/${book.book}`} target="_blank" rel="noopener noreferrer">
-              <Button className="w-full" size="lg">
-                Read Now
-              </Button>
-            </a>
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={async () => {
+                const { canAccess, message, showSubscribeSheet: shouldShow } = checkAccess();
+                if (canAccess) {
+                  try {
+                    const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
+                    // Test if PDF is accessible
+                    const response = await fetch(pdfUrl, { method: "HEAD" });
+                    if (!response.ok) {
+                      throw new Error("PDF not found or inaccessible");
+                    }
+                    setPdfSource(pdfUrl);
+                    setIsPdfVisible(true);
+                  } catch (error) {
+                    console.error("Error accessing PDF:", error);
+                    // Handle error appropriately
+                  }
+                } else if (shouldShow) {
+                  setSubscribeMessage(message);
+                  setShowSubscribeSheet(true);
+                }
+              }}
+            >
+              Read Now
+            </Button>
           </div>
 
           <div className="rounded-lg border p-6 text-center">
             <h2 className="mb-4 text-xl font-semibold">Listen to Audio Book</h2>
             {book.audio ? (
-              <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio ? book.audio : "test.mp3"}`} />
+              (() => {
+                const { canAccess, message, showSubscribeSheet: shouldShow } = checkAccess();
+                if (canAccess) {
+                  return <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio}`} />;
+                } else {
+                  return (
+                    <div
+                      onClick={() => {
+                        if (shouldShow) {
+                          setSubscribeMessage(message);
+                          setShowSubscribeSheet(true);
+                        }
+                      }}
+                    >
+                      <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio}`} />
+                    </div>
+                  );
+                }
+              })()
             ) : (
               <div className="space-y-4 py-8">
                 <div className="text-4xl">🎧</div>
@@ -221,6 +276,15 @@ const BookDetails: FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+      {isPdfVisible && (
+        <PdfViewer 
+          pdfSource={pdfSource} 
+          onClose={() => {
+            setIsPdfVisible(false);
+            setPdfSource("");
+          }} 
+        />
+      )}
     </div>
   );
 };

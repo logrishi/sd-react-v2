@@ -10,28 +10,16 @@ export interface HeaderIcon {
 }
 
 export const headerIcons: HeaderIcon[] = [
-  {
-    id: "bookmarks",
-    icon: Bookmark,
-    label: "Bookmarks",
-    href: "/bookmarks",
-  },
-  {
-    id: "cart",
-    icon: ShoppingCart,
-    label: "Cart",
-    href: "/cart",
-  },
+  // {
+  //   id: "cart",
+  //   icon: ShoppingCart,
+  //   label: "Cart",
+  //   href: "/cart",
+  // },
   {
     id: "notifications",
     icon: Bell,
     label: "Notifications",
     href: "/notifications",
-  },
-  {
-    id: "profile",
-    icon: User,
-    label: "Profile",
-    href: "/profile",
   },
 ];

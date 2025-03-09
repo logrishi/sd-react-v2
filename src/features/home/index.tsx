@@ -7,6 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
 import { SearchIcon, BellIcon, Share2Icon, BookmarkIcon, ChevronRightIcon } from "lucide-react";
 import { store } from "@/services/store";
 import { useEffect, useState } from "react";
+import { SubscribeSheet } from "@/components/common/subscribe-sheet";
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import { getBooks } from "@/services/backend/actions";
 import { sanitizeText } from "@/lib/utils/text-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avatar";
@@ -25,7 +27,19 @@ interface Book {
 const Home: FC = () => {
   const { books, searchQuery, selectedCategory } = store.library();
   const [loading, setLoading] = useState(false);
+  const [showSubscribeSheet, setShowSubscribeSheet] = useState(false);
+  const [subscribeMessage, setSubscribeMessage] = useState("");
+  const { checkAccess } = useAccessControl();
   const navigate = useNavigate();
+
+  // Check access when component mounts
+  useEffect(() => {
+    const { message, showSubscribeSheet: shouldShow } = checkAccess();
+    if (shouldShow) {
+      setSubscribeMessage(message);
+      setShowSubscribeSheet(true);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -86,6 +100,14 @@ const Home: FC = () => {
     <div className="flex flex-col min-h-screen bg-background">
       {/* Main Content */}
       <main className="flex-1">
+        {/* Bottom Sheet */}
+        <SubscribeSheet 
+          isOpen={showSubscribeSheet}
+          onClose={() => setShowSubscribeSheet(false)}
+          message={subscribeMessage}
+          persistent={true}
+          hasBottomTabs={true}
+        />
         <div className="container py-6 space-y-4">
           {/* Special For You */}
           <section>
