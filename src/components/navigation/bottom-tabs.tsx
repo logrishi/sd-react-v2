@@ -26,7 +26,7 @@ export const BottomTabs: FC<BottomTabsProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t pb-safe block lg:hidden">
         <div className="container mx-auto">
-          <nav className="flex items-center justify-around h-16 text-black">
+          <nav className="flex items-center justify-around h-16 text-foreground">
             {bottomItems.map((item) => (
               <NavLink
                 key={item.path}

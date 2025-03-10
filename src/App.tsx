@@ -1,8 +1,13 @@
 import { RouterProvider } from "@/lib/vendors";
 import { router } from "./services/router";
+import { ThemeProvider } from "./components/theme-provider";
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  );
 }
 
 export default App;

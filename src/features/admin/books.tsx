@@ -144,7 +144,7 @@ const Books: FC = () => {
                         <TableCell>{formatPrice(book.price, book.is_free)}</TableCell>
                         <TableCell>
                           {book.audio ? (
-                            <Headphones className="h-4 w-4 text-green-500" />
+                            <Headphones className="h-4 w-4 text-success" />
                           ) : (
                             <HeadphoneOff className="h-4 w-4 text-muted-foreground opacity-50" />
                           )}
@@ -247,7 +247,7 @@ const Books: FC = () => {
                       <div className="h-5 mb-1">
                         <div className="flex items-center text-xs text-muted-foreground">
                           {book.audio ? (
-                            <Headphones className="h-3 w-3 text-green-500 mr-1" />
+                            <Headphones className="h-3 w-3 text-success mr-1" />
                           ) : (
                             <HeadphoneOff className="h-3 w-3 text-muted-foreground opacity-50 mr-1" />
                           )}

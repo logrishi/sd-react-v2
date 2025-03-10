@@ -47,7 +47,11 @@ export const store = {
     persist: true,
   },
 
-  cart: [],
+  isNative: {
+    isNative: false,
+    persist: true,
+  },
+
   otp: {
     otp: "",
     timestamp: 0,

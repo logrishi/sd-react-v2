@@ -1,22 +1,19 @@
-import { createElement, type FC } from "@/lib/vendors";
+import { type FC } from "@/lib/vendors";
 import BookCardSkeleton from "./components/book-card-skeleton";
 import { Button } from "@/components/common/ui/button";
-import { Input } from "@/components/common/ui/input";
-import { Card, CardContent, CardTitle, CardDescription, CardHeader, CardFooter } from "@/components/common/ui/card";
+import { Card, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/common/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
-import { SearchIcon, BellIcon, Share2Icon, BookmarkIcon, ChevronRightIcon, BookOpen, Headphones, AlertTriangle } from "lucide-react";
+import { BookmarkIcon, BookOpen, Headphones } from "@/assets/icons";
 import { store } from "@/services/store";
 import { useEffect, useState } from "react";
-import { SubscribeSheet } from "@/components/common/banner/subscribe-sheet";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import { getBooks } from "@/services/backend/actions";
 import { sanitizeText } from "@/lib/utils/text-utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avatar";
 import { Badge } from "@/components/common/ui/badge";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { useNavigate } from "react-router-dom";
 import { homeBanner } from "@/assets/images";
-import { Alert, AlertDescription, AlertTitle } from "@/components/common/ui/alert";
+import Pay from "../pay";
 
 interface Book {
   id: number;
@@ -38,10 +35,10 @@ const Home: FC = () => {
   // Check access status and set alert message
   useEffect(() => {
     const { canAccess, message } = checkAccess();
-    
+
     if (!canAccess) {
       setShowAlert(true);
-      
+
       if (!isLoggedIn || !isSubscribed) {
         setAlertMessage("Subscribe to gain access to e-books and audiobooks");
       } else if (isSubscriptionExpired) {
@@ -116,28 +113,27 @@ const Home: FC = () => {
         <div className="container py-6 space-y-4">
           {/* Subscription Alert */}
           {showAlert && (
-            <Alert className="mb-4 border-amber-500 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-              <div className="flex items-start md:items-center">
-                <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-amber-500 mr-2 flex-shrink-0 mt-0.5 md:mt-0" />
-                <AlertDescription className="text-foreground">
-                  {alertMessage}
-                </AlertDescription>
-              </div>
-              <Button 
-                size="sm" 
-                variant="default" 
-                className="bg-amber-500 hover:bg-amber-600 w-full md:w-auto"
-                onClick={() => {
-                  if (!isLoggedIn) {
-                    navigate('/login');
-                  } else {
-                    navigate('/payments');
-                  }
-                }}
-              >
-                Subscribe Now
-              </Button>
-            </Alert>
+            // <Alert className="mb-4 border-primary flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+            //   <div className="flex items-start md:items-center">
+            //     <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-primary mr-2 flex-shrink-0 mt-0.5 md:mt-0" />
+            //     <AlertDescription className="text-foreground">{alertMessage}</AlertDescription>
+            //   </div>
+            //   <Button
+            //     size="sm"
+            //     variant="default"
+            //     className="bg-primary hover:bg-primary/90 w-full md:w-auto"
+            //     onClick={() => {
+            //       if (!isLoggedIn) {
+            //         navigate("/login");
+            //       } else {
+            //         navigate("/payments");
+            //       }
+            //     }}
+            //   >
+            //     Subscribe Now
+            //   </Button>
+            // </Alert>
+            <Pay />
           )}
           {/* Banner */}
           <section>
@@ -238,7 +234,7 @@ const Home: FC = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={`h-8 w-8 bg-background/80 hover:bg-background/80 ${bookmarkedBooks.includes(book.id) ? "text-red-500" : ""}`}
+                          className={`h-8 w-8 bg-background/80 hover:bg-background/80 ${bookmarkedBooks.includes(book.id) ? "text-primary" : ""}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleBookmark(book.id);
@@ -271,7 +267,7 @@ const Home: FC = () => {
           </section>
         </div>
       </main>
-      
+
       {/* SubscribeSheet removed */}
     </div>
   );

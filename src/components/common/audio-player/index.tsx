@@ -104,18 +104,18 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ audioUrl, title, miniPlayer = false
   }
 
   return (
-    <div className="rounded-lg bg-white p-4 shadow-md">
+    <div className="rounded-lg bg-background p-4 shadow-md">
       <audio ref={audioRef} src={audioUrl} />
 
       {title && (
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-700">{title}</h3>
+          <h3 className="text-sm font-medium text-foreground">{title}</h3>
         </div>
       )}
 
       <div className="mb-4">
         <Slider value={[currentTime]} min={0} max={duration} step={1} onValueChange={handleSeek} className="w-full" />
-        <div className="mt-1 flex justify-between text-xs text-gray-500">
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>

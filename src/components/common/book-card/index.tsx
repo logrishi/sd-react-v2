@@ -52,7 +52,7 @@ const BookCard: FC<BookCardProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            className={cn("h-8 w-8 bg-background/80 hover:bg-background/80", isBookmarked && "text-red-500")}
+            className={cn("h-8 w-8 bg-background/80 hover:bg-background/80", isBookmarked && "text-primary")}
             onClick={handleBookmarkClick}
           >
             <Bookmark className="h-4 w-4" fill={isBookmarked ? "currentColor" : "none"} />

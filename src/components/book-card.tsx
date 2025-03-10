@@ -25,7 +25,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onBookmark, bookmarked }) => 
         <div className="font-bold text-xl mb-2 h-12 overflow-hidden text-ellipsis line-clamp-2" title={name}>
           {name}
         </div>
-        <p className="text-gray-700 text-base h-6 overflow-hidden text-ellipsis whitespace-nowrap" title={description}>
+        <p className="text-gray-600 text-base h-6 overflow-hidden text-ellipsis whitespace-nowrap" title={description}>
           {description}
         </p>
       </div>

@@ -1,10 +1,10 @@
-import { useNavigate, useLocation, type FC } from "@/lib/vendors";
+import { useNavigate, useLocation, useEffect, useState, type FC } from "@/lib/vendors";
 import { Button } from "@/components/common/ui/button";
-import { ChevronLeft, ShieldUser } from "@/assets/icons";
+import { ChevronLeft, ShieldUser, Sun, Moon, type LucideIcon } from "@/assets/icons";
 import { headerIcons } from "@/lib/config/header-icons.config";
 import { cn } from "@/lib/utils/utils";
 import { store } from "@/services/store";
-import * as Icons from "@/assets/icons";
+import { useTheme } from "@/lib/hooks/useTheme";
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -13,14 +13,27 @@ interface HeaderProps {
   className?: string;
 }
 
+// Helper component to render dynamic icons
+const DynamicIcon: FC<{ icon: LucideIcon; className?: string }> = ({ icon: Icon, className }) => {
+  return <Icon className={className} />;
+};
+
 export const Header: FC<HeaderProps> = ({
   showBackButton = true,
   title = "Saraighat Digital",
-  rightIcons = ["bookmarks", "cart", "notifications", "profile"],
+  rightIcons = ["theme", "bookmarks", "cart", "notifications", "profile"],
   className,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toggleTheme, isDarkTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before rendering theme toggle
+  // to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header
@@ -49,6 +62,15 @@ export const Header: FC<HeaderProps> = ({
               return null;
             }
 
+            // Special handling for theme toggle
+            if (icon.id === "theme") {
+              return (
+                <Button key={icon.id} variant="ghost" size="icon" onClick={toggleTheme}>
+                  {mounted && (isDarkTheme() ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />)}
+                </Button>
+              );
+            }
+
             return (
               <Button
                 key={icon.id}
@@ -63,7 +85,9 @@ export const Header: FC<HeaderProps> = ({
                 }}
               >
                 {icon.id === "admin" ? (
-                  <ShieldUser className="h-6 w-6 text-red-500" />
+                  <ShieldUser className="h-5 w-5 text-primary" />
+                ) : icon.dynamicIcon ? (
+                  <DynamicIcon icon={icon.dynamicIcon()} className="h-5 w-5" />
                 ) : (
                   <icon.icon className="h-5 w-5" />
                 )}

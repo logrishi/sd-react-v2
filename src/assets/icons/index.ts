@@ -32,6 +32,12 @@ import {
   HeadphoneOff,
   Eye,
   ShieldUser,
+  Sun,
+  Moon,
+  BookmarkIcon,
+  BookOpen,
+  LucideIcon,
+  AlertTriangle,
 } from "lucide-react";
 
 // Export all icons
@@ -68,4 +74,10 @@ export {
   HeadphoneOff,
   Eye,
   ShieldUser,
+  Sun,
+  Moon,
+  BookmarkIcon,
+  BookOpen,
+  AlertTriangle,
+  type LucideIcon,
 };

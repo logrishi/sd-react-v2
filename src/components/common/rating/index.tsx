@@ -20,12 +20,12 @@ const Rating: FC<RatingProps> = ({ value, size = "md", showValue = false }) => {
 
   // Add full stars
   for (let i = 0; i < fullStars; i++) {
-    stars.push(<Star key={`star-${i}`} className={`${starSize[size]} fill-yellow-400 text-yellow-400`} />);
+    stars.push(<Star key={`star-${i}`} className={`${starSize[size]} fill-warning text-warning`} />);
   }
 
   // Add half star if needed
   if (hasHalfStar) {
-    stars.push(<StarHalf key="half-star" className={`${starSize[size]} fill-yellow-400 text-yellow-400`} />);
+    stars.push(<StarHalf key="half-star" className={`${starSize[size]} fill-warning text-warning`} />);
   }
 
   // Add empty stars
@@ -37,7 +37,7 @@ const Rating: FC<RatingProps> = ({ value, size = "md", showValue = false }) => {
   return (
     <div className="flex items-center gap-1">
       <div className="flex">{stars}</div>
-      {showValue && <span className="ml-1 text-sm text-gray-600">({value?.toFixed(1)})</span>}
+      {showValue && <span className="ml-1 text-sm text-muted-foreground">({value?.toFixed(1)})</span>}
     </div>
   );
 };

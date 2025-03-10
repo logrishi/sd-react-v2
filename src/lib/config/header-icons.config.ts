@@ -1,5 +1,4 @@
-import { ShoppingCart, Bell, User, Bookmark, ShieldUser } from "@/assets/icons";
-import type { LucideIcon } from "lucide-react";
+import { ShoppingCart, Bell, User, Bookmark, ShieldUser, Sun, Moon, type LucideIcon } from "@/assets/icons";
 
 export interface HeaderIcon {
   id: string;
@@ -7,15 +6,17 @@ export interface HeaderIcon {
   label: string;
   href?: string;
   onClick?: () => void;
+  dynamicIcon?: () => LucideIcon;
 }
 
 export const headerIcons: HeaderIcon[] = [
-  // {
-  //   id: "cart",
-  //   icon: ShoppingCart,
-  //   label: "Cart",
-  //   href: "/cart",
-  // },
+  {
+    id: "theme",
+    icon: Sun, // Default icon, will be overridden by dynamicIcon
+    label: "Toggle Theme",
+    dynamicIcon: () => Sun, // This will be handled in the Header component
+    onClick: () => {}, // This will be handled in the Header component
+  },
   {
     id: "notifications",
     icon: Bell,

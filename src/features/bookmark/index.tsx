@@ -86,7 +86,7 @@ const Bookmark: FC = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 bg-background/80 hover:bg-background/80 text-red-500"
+                          className="h-8 w-8 bg-background/80 hover:bg-background/80 text-primary"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRemoveBookmark(book.id);

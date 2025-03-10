@@ -447,7 +447,7 @@ const Profile: FC = () => {
             If you're having trouble with your account or have questions, our support team is here to help
           </p>
           <div className="space-y-2">
-            <Button variant="outline" className="w-full text-destructive">
+            <Button variant="outline" className="w-full text-primary">
               Contact Support
             </Button>
           </div>

@@ -284,7 +284,7 @@ const AddBook: FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">{error}</div>}
 
-            {success && <div className="bg-green-100 text-green-800 p-3 rounded-md text-sm">{success}</div>}
+            {success && <div className="bg-success/10 text-success p-3 rounded-md text-sm">{success}</div>}
 
             <div className="space-y-4">
               {/* Name */}
@@ -397,7 +397,7 @@ const AddBook: FC = () => {
                 <div className="relative border rounded-md p-4 flex items-center hover:bg-muted/50 transition-colors">
                   {formData.book && (
                     <div
-                      className="h-12 w-12 rounded-full bg-blue-100 flex-shrink-0 mr-4 flex items-center justify-center cursor-pointer"
+                      className="h-12 w-12 rounded-full bg-info/10 flex-shrink-0 mr-4 flex items-center justify-center cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Open PDF in new tab
@@ -407,7 +407,7 @@ const AddBook: FC = () => {
                         }
                       }}
                     >
-                      <Eye className="h-6 w-6 text-blue-600" />
+                      <Eye className="h-6 w-6 text-info" />
                     </div>
                   )}
                   <div

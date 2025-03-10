@@ -1,5 +1,4 @@
 import { type FC } from "@/lib/vendors";
-import { type ComponentType } from "react";
 
 export interface RouteConfig {
   path: string;
@@ -14,7 +13,6 @@ export interface RouteConfig {
     showBackButton?: boolean;
     headerTitle?: string;
     headerRightIcons?: string[];
-    // Banner configuration removed - banners are now imported directly in pages
   };
 }
 
@@ -42,7 +40,6 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       showBottomTabs: true,
-      // Banner configuration removed - SubscribeSheet is now imported directly in pages
     },
   },
   {
@@ -90,12 +87,12 @@ export const routes: RouteConfig[] = [
     },
   },
   {
-    path: "/orders",
-    component: () => import("@/features/orders"),
+    path: "/status/:txnId",
+    component: () => import("@/features/pay/status"),
     auth: true,
     isLazy: true,
     layoutProps: {
-      headerTitle: "My Orders",
+      headerTitle: "Payment Status",
     },
   },
   {
