@@ -14,6 +14,7 @@ interface LayoutProps {
   showLeftSidebar?: boolean;
   showRightSidebar?: boolean;
   showBottomTabs?: boolean;
+  showHeader?: boolean;
   showFooter?: boolean;
   showBackButton?: boolean;
   headerTitle?: string;
@@ -25,12 +26,12 @@ export const Layout: FC<LayoutProps> = ({
   showLeftSidebar = true,
   showRightSidebar = false,
   showBottomTabs = true,
+  showHeader = true,
   showFooter = true,
   showBackButton: propShowBackButton,
   headerTitle: propHeaderTitle,
   headerRightIcons: propHeaderRightIcons,
 }) => {
-
   const location = useLocation();
   const currentRoute = routes.find((route) => {
     // Convert route path to regex to handle dynamic segments
@@ -49,7 +50,7 @@ export const Layout: FC<LayoutProps> = ({
   const content = (
     <div className="flex flex-col min-h-screen bg-background layout-sidebar">
       {/* Header */}
-      <Header showBackButton={showBackButton} title={headerTitle} rightIcons={headerRightIcons} />
+      {showHeader && <Header showBackButton={showBackButton} title={headerTitle} rightIcons={headerRightIcons} />}
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
@@ -75,9 +76,7 @@ export const Layout: FC<LayoutProps> = ({
           </main>
 
           {/* Desktop Footer */}
-          {showFooter && (
-            <Footer />
-          )}
+          {showFooter && <Footer />}
         </div>
 
         {/* Right Sidebar */}

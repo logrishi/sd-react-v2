@@ -1,7 +1,7 @@
 import { useEffect, useState, type FC } from "@/lib/vendors";
 import { Card, CardContent } from "@/components/common/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/common/ui/avatar";
-import { Bell, BellOff } from "lucide-react";
+import { BellOff } from "@/assets/icons";
 import { Button } from "@/components/common/ui/button";
 import { Badge } from "@/components/common/ui/badge";
 import { Loading } from "@/components/common/loading";

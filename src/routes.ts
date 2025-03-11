@@ -9,6 +9,8 @@ export interface RouteConfig {
   layoutProps?: {
     showLeftSidebar?: boolean;
     showRightSidebar?: boolean;
+    showHeader?: boolean;
+    showFooter?: boolean;
     showBottomTabs?: boolean;
     showBackButton?: boolean;
     headerTitle?: string;
@@ -25,6 +27,22 @@ export const routes: RouteConfig[] = [
       headerTitle: "Notifications",
       showBackButton: true,
     },
+  },
+  {
+    path: "/privacy",
+    component: () => import("@/features/privacy"),
+    isLazy: true,
+    layoutProps: {
+      headerTitle: "Privacy Policy",
+      showBackButton: true,
+    },
+  },
+
+  //no ui just here for using useNavigate
+  {
+    path: "/native",
+    component: () => import("@/features/native-actions"),
+    isLazy: true,
   },
   {
     path: "/bookmarks",
@@ -92,7 +110,14 @@ export const routes: RouteConfig[] = [
     auth: true,
     isLazy: true,
     layoutProps: {
-      headerTitle: "Payment Status",
+      headerTitle: "",
+      showHeader: false,
+      showFooter: false,
+      showBottomTabs: false,
+      showLeftSidebar: false,
+      showRightSidebar: false,
+      showBackButton: false,
+      headerRightIcons: [],
     },
   },
   {

@@ -2,24 +2,15 @@ import { useEffect, useParams, useState, useMemo, type FC } from "@/lib/vendors"
 import { Bookmark } from "@/assets/icons";
 import { store } from "@/services/store";
 import { Button } from "@/components/common/ui/button";
-import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import AudioPlayer from "@/components/common/audio-player";
 import { getBook } from "@/services/backend/actions";
 import { Image } from "@/components/common/image";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import BookSkeleton from "@/features/home/components/book-details-skeleton";
 import PdfViewer from "@/components/pdf-viewer";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/common/ui/alert-dialog";
+import Pay from "@/features/pay";
 import { useNavigate } from "react-router-dom";
+import { sendToNative } from "@/lib/utils/utils";
 
 interface BookDetails {
   id: number;
@@ -37,9 +28,6 @@ const BookDetails: FC = () => {
   const [book, setBook] = useState<BookDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
-  const [subscribeMessage, setSubscribeMessage] = useState("");
-  const { checkAccess } = useAccessControl();
   const [isPdfVisible, setIsPdfVisible] = useState(false);
   const [pdfSource, setPdfSource] = useState("");
   const { isLoggedIn, isSubscribed, isSubscriptionExpired } = store.auth.get();
@@ -120,65 +108,47 @@ const BookDetails: FC = () => {
           <p>{book.description}</p>
         </div>
 
-        <div className="rounded-lg border p-6 text-center">
-          <h2 className="mb-4 text-xl font-semibold">Read Book</h2>
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={async () => {
-              const { canAccess, message } = checkAccess();
-              if (canAccess) {
-                try {
-                  const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
-                  // Test if PDF is accessible
-                  const response = await fetch(pdfUrl, { method: "HEAD" });
-                  if (!response.ok) {
-                    throw new Error("PDF not found or inaccessible");
+        <div className="rounded-lg border p-6">
+          <h2 className="mb-4 text-xl font-semibold text-center">Read Book</h2>
+          {!isSubscribed || isSubscriptionExpired ? (
+            <Pay />
+          ) : (
+            <div className="text-center">
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={async () => {
+                  try {
+                    const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
+                    console.log("pdfUrl", pdfUrl);
+                    // sendToNative({
+                    //   type: "pdf",
+                    //   pdfUrl,
+                    // });
+                    setPdfSource(pdfUrl);
+                    setIsPdfVisible(true);
+                  } catch (error) {
+                    console.error("Error accessing PDF:", error);
+                    // Handle error appropriately
                   }
-                  setPdfSource(pdfUrl);
-                  setIsPdfVisible(true);
-                } catch (error) {
-                  console.error("Error accessing PDF:", error);
-                  // Handle error appropriately
-                }
-              } else {
-                // Show subscribe dialog
-                setSubscribeMessage(message);
-                setShowSubscribeDialog(true);
-              }
-            }}
-          >
-            Read Now
-          </Button>
+                }}
+              >
+                Read Now
+              </Button>
+            </div>
+          )}
         </div>
 
-        <div className="rounded-lg border p-6 text-center">
-          <h2 className="mb-4 text-xl font-semibold">Listen to Audio Book</h2>
+        <div className="rounded-lg border p-6">
+          <h2 className="mb-4 text-xl font-semibold text-center">Listen to Audio Book</h2>
           {book.audio ? (
-            (() => {
-              const { canAccess } = checkAccess();
-              const audioUrl = `${getEnvVar("VITE_IMAGE_URL")}/audio/${book.audio}`;
-
-              if (canAccess) {
-                return <AudioPlayer audioUrl={audioUrl} />;
-              } else {
-                return (
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={() => {
-                      const { message } = checkAccess();
-                      setSubscribeMessage(message);
-                      setShowSubscribeDialog(true);
-                    }}
-                  >
-                    Listen Now
-                  </Button>
-                );
-              }
-            })()
+            !isSubscribed || isSubscriptionExpired ? (
+              <Pay />
+            ) : (
+              <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/${book.audio}`} />
+            )
           ) : (
-            <div className="space-y-4 py-8">
+            <div className="space-y-4 py-8 text-center">
               <div className="text-4xl">🎧</div>
               <p className="text-gray-600">Audio version coming soon!</p>
               <p className="text-sm text-muted-foreground">
@@ -197,31 +167,6 @@ const BookDetails: FC = () => {
           }}
         />
       )}
-
-      {/* Subscribe Dialog */}
-      <AlertDialog open={showSubscribeDialog} onOpenChange={setShowSubscribeDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Subscription Required</AlertDialogTitle>
-            <AlertDialogDescription>{subscribeMessage || "Subscribe to access this content"}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (!isLoggedIn) {
-                  navigate("/login");
-                } else if (!isSubscribed || isSubscriptionExpired) {
-                  navigate("/payments");
-                }
-                setShowSubscribeDialog(false);
-              }}
-            >
-              Subscribe
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

@@ -57,4 +57,37 @@ export const store = {
     timestamp: 0,
     persist: true,
   },
+  isOtaAvailable: {
+    isOtaAvailable: false,
+    persist: true,
+  },
+  isDev: {
+    isDev: false,
+    persist: true,
+  },
+  isUpdateAvailable: {
+    isUpdateAvailable: false,
+    persist: true,
+  },
+  applicationVersion: {
+    applicationVersion: "",
+    persist: true,
+  },
+  buildVersion: {
+    buildVersion: "",
+    persist: true,
+  },
+  deviceToken: {
+    deviceToken: "",
+    persist: true,
+  },
+
+  payment: {
+    currentPayment: {
+      txnId: "",
+      timestamp: 0,
+      userId: ""
+    },
+    persist: false,
+  },
 };

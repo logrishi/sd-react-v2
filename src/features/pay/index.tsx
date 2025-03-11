@@ -54,13 +54,6 @@ const Pay = () => {
     }
   }, [isLoggedIn, isSubscribed, isSubscriptionExpired]);
 
-  useEffect(() => {
-    document.addEventListener("message", (message: any) => handleNativeData(message));
-    return () => {
-      document.removeEventListener("message", (message: any) => {});
-    };
-  }, []);
-
   async function handlePay() {
     console.log("pay");
     if (!isLoggedIn) {
@@ -81,10 +74,14 @@ const Pay = () => {
       const res = await axios.post("https://arodos-payments.vercel.app/pay", {
         txnId: txnId,
         userId: store.auth.get().user.id,
-        amount: 200,
+        amount: 1,
         mobileNumber: 9954066643,
         // redirectUrl: `https://saraighatdigital-pay.netlify.app/status/${txnId}`,
-        redirectUrl: `http://localhost:5173/status/${txnId}`,
+        // redirectUrl: `http://localhost:5173/status/${txnId}`,
+        redirectUrl:
+          window.location.hostname == "saraighatdigital.com"
+            ? `https://saraighatdigital.com/status/${txnId}`
+            : `http://localhost:5173/status/${txnId}`,
         callbackUrl: `https://arodos-payments.vercel.app/checkStatus/${txnId}`,
       });
       console.log("res", res.data);
@@ -99,15 +96,6 @@ const Pay = () => {
 
   return (
     <>
-      {/* <div className="w-full h-screen flex flex-col space-y-5 justify-center items-center">
-        <p className="font-bold text-slate-600 text-xl">Pay now to complete your transaction!</p>
-        <Button
-          className="bg-[#06BCA4] w-56 h-16 rounded-md font-bold text-white"
-          title="Make Payment"
-          onClick={handlePay}
-          disabled={loading}
-        />
-      </div> */}
       <Alert className="mb-4 border-primary flex flex-col md:flex-row md:justify-between md:items-center gap-3">
         <div className="flex items-start md:items-center">
           <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-primary mr-2 flex-shrink-0 mt-0.5 md:mt-0" />
@@ -124,8 +112,16 @@ const Pay = () => {
               handlePay();
             }
           }}
+          disabled={loading}
         >
-          Subscribe Now
+          {loading ? (
+            <>
+              <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
+              Processing...
+            </>
+          ) : (
+            "Subscribe Now"
+          )}
         </Button>
       </Alert>
     </>

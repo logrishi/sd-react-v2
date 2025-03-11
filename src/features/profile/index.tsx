@@ -21,7 +21,7 @@ import {
   Clock,
   Check,
   X,
-} from "lucide-react";
+} from "@/assets/icons";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/common/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import {
@@ -97,13 +97,8 @@ const Profile: FC = () => {
       // Handle avatar upload if changed
       if (avatarFile) {
         try {
-          // Compress image before upload
-          const compressedImage: any = await compressImage(avatarFile);
-          const uploadResponse = await uploadMedia(compressedImage, "avatars");
-          if (uploadResponse.err) {
-            throw new Error("Failed to upload avatar");
-          }
-          imageUrl = uploadResponse.result;
+          const uploadResponse = await uploadMedia(avatarFile, "users");
+          imageUrl = uploadResponse?.files?.image;
         } catch (error) {
           console.error("Error uploading avatar:", error);
           setError("Failed to upload avatar. Please try again.");
@@ -112,15 +107,15 @@ const Profile: FC = () => {
       }
 
       // Update user profile
-      const updateResponse = await updateUser(user.id, {
-        name,
-        email,
-        image: imageUrl,
-      });
+      // const updateResponse = await updateUser(user.id, {
+      //   name,
+      //   email,
+      //   image: imageUrl,
+      // });
 
-      if (updateResponse.err) {
-        throw new Error("Failed to update profile");
-      }
+      // if (updateResponse.err) {
+      //   throw new Error("Failed to update profile");
+      // }
 
       // Update local store
       const currentAuth = store.auth.get();
@@ -144,18 +139,28 @@ const Profile: FC = () => {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Cleanup previous preview
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-      }
+      // if (avatarPreview) {
+      //   URL.revokeObjectURL(avatarPreview);
+      // }
 
-      // Create new preview
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarFile(file);
-      setAvatarPreview(previewUrl);
+      // // Create new preview
+      // const previewUrl = URL.createObjectURL(file);
+      // setAvatarFile(file);
+      // setAvatarPreview(previewUrl);
+
+      try {
+        const uploadResponse = await uploadMedia(file, "users");
+        setAvatarFile(file);
+        setAvatarPreview(uploadResponse?.files?.image);
+      } catch (error) {
+        console.error("Error uploading avatar:", error);
+        setError("Failed to upload avatar. Please try again.");
+        return;
+      }
     }
   };
 
@@ -233,7 +238,7 @@ const Profile: FC = () => {
                 <Avatar className="h-24 w-24">
                   {avatarPreview || user.image ? (
                     <AvatarImage
-                      src={avatarPreview || `${getEnvVar("VITE_IMAGE_URL")}/${user.image}`}
+                      src={avatarPreview || (user.image ? `${getEnvVar("VITE_IMAGE_URL")}/${user.image}` : "")}
                       alt={user.name}
                       className="object-cover"
                     />
@@ -327,15 +332,6 @@ const Profile: FC = () => {
                 </div>
               )}
             </div>
-
-            {isEditing && (
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Save Changes</Button>
-              </div>
-            )}
           </form>
         </CardContent>
       </Card>
@@ -424,10 +420,10 @@ const Profile: FC = () => {
             <p className="text-sm text-muted-foreground">
               Read our privacy policy to understand how we handle your data
             </p>
-            <Button variant="link" className="px-0" asChild>
-              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">
+            <Button variant="link" className="px-0" asChild onClick={() => navigate("/privacy")}>
+              <p className="text-sm">
                 View Privacy Policy <ExternalLink className="ml-1 h-4 w-4" />
-              </a>
+              </p>
             </Button>
           </div>
         </CardContent>
@@ -447,7 +443,7 @@ const Profile: FC = () => {
             If you're having trouble with your account or have questions, our support team is here to help
           </p>
           <div className="space-y-2">
-            <Button variant="outline" className="w-full text-primary">
+            <Button variant="outline" className="w-full text-primary" onClick={() => navigate("/privacy")}>
               Contact Support
             </Button>
           </div>

@@ -6,34 +6,34 @@ import { store } from "@/services/store";
 export const withForceFlags = (WrappedComponent: React.ComponentType) => {
   return function WithForceFlagsComponent(props: any) {
     const navigate = useNavigate();
-    const { user, isLoggedIn, forcePasswordReset, forceLogout }: any = store.auth.get() ?? {};
+    const { user, isLoggedIn, force_password_reset, force_logout }: any = store.auth.get() ?? {};
 
     useEffect(() => {
       const checkFlags = async () => {
         if (isLoggedIn && user?.id) {
           const response = await checkForceFlags(user.id);
 
-          if (response?.forceLogout) {
+          if (response?.force_logout) {
             // Update flag in database first
-            await updateForceFlags(user.id, { forceLogout: false });
-            
+            await updateForceFlags(user.id, { force_logout: 0 });
+
             // Handle logout
             handleLogout();
-            
+
             // Redirect to login
-            navigate("/login");
+            navigate("/login", { replace: true });
             return;
           }
 
-          if (response?.forcePasswordReset) {
+          if (response?.force_password_reset) {
             // Update store
             store.auth.set({ forcePasswordReset: true });
 
             // Update flag in database
-            await updateForceFlags(user.id, { forcePasswordReset: false });
+            await updateForceFlags(user.id, { force_password_reset: 0 });
 
             // Redirect to password-reset
-            navigate("/password-reset");
+            navigate("/password-reset", { replace: true });
             return;
           }
         }
@@ -44,18 +44,18 @@ export const withForceFlags = (WrappedComponent: React.ComponentType) => {
 
     // If force password reset is true, redirect to password-reset
     useEffect(() => {
-      if (forcePasswordReset) {
+      if (force_password_reset) {
         navigate("/password-reset");
       }
-    }, [forcePasswordReset, navigate]);
+    }, [force_password_reset, navigate]);
 
     // If force logout is true, handle logout
     useEffect(() => {
-      if (forceLogout) {
+      if (force_logout) {
         handleLogout();
         navigate("/login");
       }
-    }, [forceLogout, navigate]);
+    }, [force_logout, navigate]);
 
     return <WrappedComponent {...props} />;
   };

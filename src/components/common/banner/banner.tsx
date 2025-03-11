@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils/utils";
 import { Sheet, SheetContent } from "@/components/common/ui/sheet";
-import { X } from "lucide-react";
+import { X } from "@/assets/icons";
 import { ReactNode } from "react";
 
 interface BannerProps {
@@ -19,7 +19,7 @@ interface BannerProps {
 /**
  * Banner component that can be displayed at the bottom of the screen
  * Follows the sheet behavior requirements for different pages:
- * 
+ *
  * 1. Home Page (SubscribeSheet):
  * - Must be persistent (not auto-closable)
  * - No backdrop
@@ -50,8 +50,8 @@ export const Banner = ({
   if (!isOpen && !persistent) return null;
 
   return (
-    <Sheet 
-      open={isOpen} 
+    <Sheet
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open && dismissible && !persistent) {
           onClose();
@@ -77,7 +77,7 @@ export const Banner = ({
           padding: 0,
           border: 0,
           // Add any custom styles from parent component
-          ...containerStyle
+          ...containerStyle,
         }}
       >
         <div className="relative w-full px-6 py-4">

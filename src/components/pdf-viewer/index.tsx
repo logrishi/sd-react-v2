@@ -1,9 +1,8 @@
 import { useState, useEffect, type FC } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "@/assets/icons";
 import { Button } from "@/components/common/ui/button";
 import { Slider } from "@/components/common/ui/slider";
-import { cn } from "@/lib/utils/utils";
 
 // Set worker path for PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
@@ -160,13 +159,7 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose }) => {
         {/* Footer with navigation */}
         {numPages && numPages > 1 && (
           <div className="flex h-14 items-center justify-between border-t bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goToPrevPage}
-              disabled={pageNumber <= 1}
-              className="h-8 w-8"
-            >
+            <Button variant="outline" size="icon" onClick={goToPrevPage} disabled={pageNumber <= 1} className="h-8 w-8">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="w-full max-w-md px-4">

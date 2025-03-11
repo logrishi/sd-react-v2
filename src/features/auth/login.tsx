@@ -5,7 +5,7 @@ import { Input } from "@/components/common/ui/input";
 import { useNavigate } from "react-router-dom";
 import { store } from "@/services/store";
 import { checkUserExists, getUserPassword, login, resetPassword, handleLoginSuccess } from "@/services/backend/actions";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "@/assets/icons";
 import { useState, useEffect } from "react";
 import { withForceFlags } from "@/components/auth/with-force-flags";
 import { comparePassword, hashPassword } from "@/lib/utils/utils";

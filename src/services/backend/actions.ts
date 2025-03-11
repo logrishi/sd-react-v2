@@ -206,7 +206,7 @@ export const resetPassword = async (userId: number, hashedPassword: string, opti
 // Force Flag Actions
 export async function updateForceFlags(
   userId: string,
-  flags: { forcePasswordReset?: boolean; forceLogout?: boolean },
+  flags: { force_password_reset?: number; force_logout?: number },
   options = {}
 ) {
   try {
@@ -320,7 +320,7 @@ export async function uploadMedia(file: File, folderName: string) {
   let fileToUpload = file;
 
   // Only compress if it's an image file
-  if (file.type.startsWith('image/')) {
+  if (file.type.startsWith("image/")) {
     const compressed = await compressImage(file);
     if (!compressed) throw new Error("Failed to compress image");
     fileToUpload = compressed;
@@ -337,5 +337,6 @@ export async function uploadMedia(file: File, folderName: string) {
       password: import.meta.env.VITE_UPLOAD_PASS,
     },
   });
+  console.log("data", data);
   return data;
 }

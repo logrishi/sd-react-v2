@@ -74,3 +74,8 @@ export const verifyOtp = async (data: any) => {
   });
   return { success: true, message: "OTP verified" };
 };
+
+export function sendToNative(data: any) {
+  // @ts-ignore
+  window.ReactNativeWebView.postMessage(JSON.stringify(data));
+}

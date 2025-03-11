@@ -8,7 +8,7 @@ import { Label } from "@/components/common/ui/label";
 import { Alert, AlertDescription } from "@/components/common/ui/alert";
 import { resetPassword, checkUserExists, login } from "@/services/backend/actions";
 import { generateOtpWithTimestamp, sendMail, verifyOtp, hashPassword } from "@/lib/utils/utils";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "@/assets/icons";
 
 const PasswordReset: FC = () => {
   const navigate = useNavigate();

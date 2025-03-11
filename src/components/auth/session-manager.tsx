@@ -2,15 +2,22 @@ import { useEffect, type FC } from "@/lib/vendors";
 import { useNavigate } from "react-router-dom";
 import { checkAndUpdateSessionStatus } from "@/lib/utils/session";
 import { store } from "@/services/store";
+import { handleLogout } from "@/services/backend/actions";
 
 const CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
 
 export const SessionManager: FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
-  const { isLoggedIn } = store.auth.get();
+  const { isLoggedIn, forcePasswordReset } = store.auth.get();
 
   useEffect(() => {
     if (!isLoggedIn) return;
+
+    // Check for force password reset
+    if (forcePasswordReset) {
+      handleLogout();
+      return;
+    }
 
     // Initial check
     const checkSession = async () => {

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/common/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/common/ui/select";
 import { Checkbox } from "@/components/common/ui/checkbox";
 import { useNavigate, useParams } from "react-router-dom";
-import { IndianRupee, FileText, Headphones, Image, Upload, Loader2, Eye } from "lucide-react";
+import { IndianRupee, FileText, Headphones, Image, Loader2, Eye } from "@/assets/icons";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { createBook, getBook, updateBook, uploadMedia } from "@/services/backend/actions";
 import AudioPlayer from "@/components/common/audio-player";
@@ -166,11 +166,8 @@ const AddBook: FC = () => {
       if (imageFile) {
         try {
           // uploadMedia will automatically compress image files
-          const uploadResponse = await uploadMedia(imageFile, "books/images");
-          if (uploadResponse.err) {
-            throw new Error("Failed to upload image");
-          }
-          imageUrl = uploadResponse.result;
+          const uploadResponse = await uploadMedia(imageFile, "sample");
+          imageUrl = uploadResponse?.files?.image;
         } catch (error) {
           console.error("Error uploading image:", error);
           setError("Failed to upload image");
@@ -182,11 +179,8 @@ const AddBook: FC = () => {
       // Upload book if changed
       if (bookFile) {
         try {
-          const uploadResponse = await uploadMedia(bookFile, "books/pdfs");
-          if (uploadResponse.err) {
-            throw new Error("Failed to upload book");
-          }
-          bookUrl = uploadResponse.result;
+          const uploadResponse = await uploadMedia(bookFile, "books");
+          bookUrl = uploadResponse?.files?.image;
         } catch (error) {
           console.error("Error uploading book:", error);
           setError("Failed to upload book");
@@ -198,11 +192,8 @@ const AddBook: FC = () => {
       // Upload audio if changed
       if (audioFile) {
         try {
-          const uploadResponse = await uploadMedia(audioFile, "books/audio");
-          if (uploadResponse.err) {
-            throw new Error("Failed to upload audio");
-          }
-          audioUrl = uploadResponse.result;
+          const uploadResponse = await uploadMedia(audioFile, "audio");
+          audioUrl = uploadResponse?.files?.image;
         } catch (error) {
           console.error("Error uploading audio:", error);
           setError("Failed to upload audio");
@@ -443,10 +434,7 @@ const AddBook: FC = () => {
                   <div className="flex items-center w-full">
                     {formData.audio && (
                       <div className="flex-shrink-0 mr-4">
-                        <AudioPlayer 
-                          audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/audio/${formData.audio}`} 
-                          miniPlayer={true}
-                        />
+                        <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/${formData.audio}`} miniPlayer={true} />
                       </div>
                     )}
                     <div

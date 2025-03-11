@@ -13,7 +13,8 @@ import { Badge } from "@/components/common/ui/badge";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { useNavigate } from "react-router-dom";
 import { homeBanner } from "@/assets/images";
-import Pay from "../pay";
+import Pay from "@/features/pay";
+import NativeActions from "../native-actions";
 
 interface Book {
   id: number;
@@ -108,33 +109,13 @@ const Home: FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      <NativeActions />
+
       {/* Main Content */}
       <main className="flex-1 relative">
         <div className="container py-6 space-y-4">
           {/* Subscription Alert */}
-          {showAlert && (
-            // <Alert className="mb-4 border-primary flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-            //   <div className="flex items-start md:items-center">
-            //     <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-primary mr-2 flex-shrink-0 mt-0.5 md:mt-0" />
-            //     <AlertDescription className="text-foreground">{alertMessage}</AlertDescription>
-            //   </div>
-            //   <Button
-            //     size="sm"
-            //     variant="default"
-            //     className="bg-primary hover:bg-primary/90 w-full md:w-auto"
-            //     onClick={() => {
-            //       if (!isLoggedIn) {
-            //         navigate("/login");
-            //       } else {
-            //         navigate("/payments");
-            //       }
-            //     }}
-            //   >
-            //     Subscribe Now
-            //   </Button>
-            // </Alert>
-            <Pay />
-          )}
+          {showAlert && <Pay />}
           {/* Banner */}
           <section>
             <div className="flex items-center justify-between mb-4">

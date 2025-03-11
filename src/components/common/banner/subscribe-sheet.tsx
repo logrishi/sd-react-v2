@@ -1,12 +1,12 @@
 import React from "react";
 import { type FC } from "@/lib/vendors";
 import { Button } from "@/components/common/ui/button";
-import { IndianRupee, X } from "lucide-react";
+import { X } from "@/assets/icons";
 import { cn } from "@/lib/utils/utils";
 
 /**
  * SubscribeSheet component that can be used directly in any page
- * 
+ *
  * Guidelines:
  * 1. Home Page (Bottom Tabs on Small Screens):
  *    - Persistent: Not auto-closable
@@ -51,36 +51,36 @@ interface SubscribeSheetProps {
    * Whether the sheet is open or not
    */
   isOpen: boolean;
-  
+
   /**
    * Function to close the sheet
    */
   onClose: () => void;
-  
+
   /**
    * Message to display in the sheet
    */
   message: string;
-  
+
   /**
    * Price to display in the sheet (optional)
    */
   price?: number;
-  
+
   /**
    * Whether the sheet is persistent (not auto-closable)
    * - Home page: true
    * - Book Details: false
    */
   persistent?: boolean;
-  
+
   /**
    * Whether the component should account for bottom tabs
    * - Home page on small screens: true
    * - Book Details: false
    */
   hasBottomTabs?: boolean;
-  
+
   /**
    * Additional class names
    */
@@ -129,19 +129,15 @@ export const SubscribeSheet: FC<SubscribeSheetProps> = ({
     <>
       {/* Backdrop for non-persistent mode (Book Details) */}
       {!persistent && (
-        <div 
-          className="fixed inset-0 bg-black/30 z-30" 
-          onClick={handleBackdropClick}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 bg-black/30 z-30" onClick={handleBackdropClick} aria-hidden="true" />
       )}
-      
+
       {/* Position the banner at the bottom but with correct styling */}
       <div
         className={cn(
           // Base styles for all contexts
           "w-full border-t border-gray-200 bg-white shadow-md",
-          
+
           // Positioning classes based on context
           persistent
             ? "fixed bottom-0 left-0 right-0 lg:sticky lg:bottom-0" // Home page - fixed on mobile, sticky on large screens
@@ -152,16 +148,16 @@ export const SubscribeSheet: FC<SubscribeSheetProps> = ({
 
           // Container width matches footer on large screens
           "lg:max-w-screen-xl lg:mx-auto",
-          
+
           // Extra spacing for bottom tabs on small screens (Home page)
           hasBottomTabs && "mb-[64px] lg:mb-0",
-          
+
           // For non-persistent mode (Book Details) on small screens
           !persistent && "rounded-t-lg",
-          
+
           // Animation classes
           "transition-all duration-300",
-          
+
           // Pass any custom class names
           className
         )}
@@ -186,7 +182,7 @@ export const SubscribeSheet: FC<SubscribeSheetProps> = ({
                 <span className="mr-1 text-sm">₹</span> {price}
               </span>
             </div>
-            
+
             {/* Message in the center */}
             <div className="flex-1 text-center mx-4">
               <p className="text-sm font-medium text-gray-900">{message}</p>
