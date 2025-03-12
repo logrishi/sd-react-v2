@@ -35,12 +35,7 @@ export const capitalizeSentence = (text: string): string => {
 /**
  * Formats book data by capitalizing and sanitizing text
  */
-export const formatBookData = (data: {
-  name?: string;
-  description?: string;
-  author?: string;
-  [key: string]: unknown;
-}) => {
+export const formatBookData = (data: { name?: string; description?: string; [key: string]: unknown }) => {
   const formatted = { ...data };
 
   if (formatted.name) {
@@ -49,10 +44,6 @@ export const formatBookData = (data: {
 
   if (formatted.description) {
     formatted.description = capitalizeSentence(sanitizeText(formatted.description));
-  }
-
-  if (formatted.author) {
-    formatted.author = capitalizeWords(sanitizeText(formatted.author));
   }
 
   return formatted;

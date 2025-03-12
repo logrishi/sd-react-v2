@@ -19,24 +19,18 @@ const debug = {
 };
 
 // Create resource instances
+const authApi = Api.resource("auth-users");
 const userApi = Api.resource("users");
 const bookApi = Api.resource("products");
-const orderApi = Api.resource("orders");
 
 // User Actions
 
-export async function getUserPassword(email: string, options = { filter: "email:" + email }) {
-  try {
-    const response = await userApi.getOne(email, options);
-    return debug.log("Get User", response);
-  } catch (error) {
-    return debug.error("Get User", error);
-  }
-}
-
 export async function getUserDetails(id: string, options = {}) {
   try {
-    const response = await userApi.getOne(id, options);
+    const response = await userApi.getOne(id, {
+      filter: "is_deleted:0",
+      ...options,
+    });
     return debug.log("Get User Details", response);
   } catch (error) {
     return debug.error("Get User Details", error);
@@ -112,11 +106,7 @@ export async function login(
   }
 ) {
   try {
-    const response = await Api.post("/auth-users", {
-      body: credentials,
-      ...options,
-    });
-
+    const response = await authApi.create(credentials, options);
     if (!response.err) {
       // Update last_login timestamp
       await userApi.update(response.result.id, {
@@ -132,12 +122,13 @@ export async function login(
 
 export async function checkUserExists(email: string, options = {}) {
   try {
-    const response = await Api.get("/users", {
-      filter: `email:${email}`,
+    const response = await userApi.getAll({
+      filter: `is_deleted:0`,
+      search: `email:${email}`,
       ...options,
     });
     return debug.log("Check User", response);
-  } catch (error) {
+  } catch (error: any) {
     return debug.error("Check User", error);
   }
 }
@@ -169,23 +160,22 @@ export async function createUser(
     // Hash password before creating user
     const hashedPassword = await hashPassword(userData.password);
 
-    const response = await Api.post("/users", {
-      body: {
-        ...userData,
-        password: hashedPassword,
-        force_logout: false,
-        force_password_reset: false,
-      },
+    const response = await userApi.create({
+      ...userData,
+      password: hashedPassword,
+      force_logout: false,
+      force_password_reset: false,
+      is_deleted: 0,
     });
 
     if (!response.err) {
       // If user creation successful, attempt login
       const loginResponse = await login({
         email: userData.email,
-        password: hashedPassword, // Use original password for login
+        password: userData.password, // Use original password for login
       });
 
-      const { success, error } = handleLoginSuccess(loginResponse);
+      const { success } = handleLoginSuccess(loginResponse);
       if (!success) {
         return { err: true, result: "Login failed after signup" };
       }
@@ -200,9 +190,7 @@ export async function createUser(
 
 export const resetPassword = async (userId: number, hashedPassword: string, options = {}) => {
   try {
-    const response = await Api.put(`/users/${userId}`, {
-      body: { password: hashedPassword, ...options },
-    });
+    const response = await userApi.update(userId, { password: hashedPassword, ...options });
     return debug.log("Reset Password", response);
   } catch (error) {
     return debug.error("Reset Password", error);
@@ -251,16 +239,16 @@ export async function updateBook(id: string, data: any, options = {}) {
   }
 }
 
-export async function getBooks() {
+export async function getBooks(options = { sort: "-created_at", filter: "is_deleted:0" }) {
   try {
-    const response = await bookApi.getAll();
+    const response = await bookApi.getAll(options);
     return debug.log("Get Books", response);
   } catch (error) {
     return debug.error("Get Books", error);
   }
 }
 
-export async function getBook(id: string, options = {}) {
+export async function getBook(id: string, options = { filter: "is_deleted:0" }) {
   try {
     const response = await bookApi.getOne(id, options);
     return debug.log("Get Book", response);
@@ -271,38 +259,10 @@ export async function getBook(id: string, options = {}) {
 
 export async function deleteBook(id: string, options = {}) {
   try {
-    const response = await bookApi.remove(id, options);
+    const response = await bookApi.update(id, { is_deleted: 1 }, options);
     return debug.log("Delete Book", response);
   } catch (error) {
     return debug.error("Delete Book", error);
-  }
-}
-
-// Order Actions
-export async function getOrder(id: string, options = {}) {
-  try {
-    const response = await orderApi.getOne(id, options);
-    return debug.log("Get Order", response);
-  } catch (error) {
-    return debug.error("Get Order", error);
-  }
-}
-
-export async function createOrder(data: any, options = {}) {
-  try {
-    const response = await orderApi.create(data, options);
-    return debug.log("Create Order", response);
-  } catch (error) {
-    return debug.error("Create Order", error);
-  }
-}
-
-export async function updateOrder(id: string, data: any, options = {}) {
-  try {
-    const response = await orderApi.update(id, data, options);
-    return debug.log("Update Order", response);
-  } catch (error) {
-    return debug.error("Update Order", error);
   }
 }
 
@@ -328,6 +288,6 @@ export async function uploadMedia(file: File, folderName: string) {
       password: import.meta.env.VITE_UPLOAD_PASS,
     },
   });
-  console.log("data", data);
+  // console.log("data", data);
   return data;
 }

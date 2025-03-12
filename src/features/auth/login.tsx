@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/common/ui/input";
 import { useNavigate } from "react-router-dom";
 import { store } from "@/services/store";
-import { checkUserExists, getUserPassword, login, resetPassword, handleLoginSuccess } from "@/services/backend/actions";
+import { checkUserExists, login, resetPassword, handleLoginSuccess } from "@/services/backend/actions";
 import { Eye, EyeOff, Mail, Lock } from "@/assets/icons";
 import { useState, useEffect } from "react";
 import { withForceFlags } from "@/components/auth/with-force-flags";
@@ -48,7 +48,6 @@ const Login: FC = () => {
         setError("Invalid credentials");
         return;
       }
-
       const user = existingUser.result[0];
 
       // Step 2: Handle force password reset

@@ -26,6 +26,7 @@ export const routes: RouteConfig[] = [
     layoutProps: {
       headerTitle: "Notifications",
       showBackButton: true,
+      showBottomTabs: false,
     },
   },
   {
@@ -35,6 +36,7 @@ export const routes: RouteConfig[] = [
     layoutProps: {
       headerTitle: "Privacy Policy",
       showBackButton: true,
+      showBottomTabs: false,
     },
   },
 

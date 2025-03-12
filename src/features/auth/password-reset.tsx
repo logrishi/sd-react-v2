@@ -4,9 +4,8 @@ import { store } from "@/services/store";
 import { Button } from "@/components/common/ui/button";
 import { Input } from "@/components/common/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/common/ui/card";
-import { Label } from "@/components/common/ui/label";
 import { Alert, AlertDescription } from "@/components/common/ui/alert";
-import { resetPassword, checkUserExists, login } from "@/services/backend/actions";
+import { resetPassword, checkUserExists, login, handleLoginSuccess } from "@/services/backend/actions";
 import { generateOtpWithTimestamp, sendMail, verifyOtp, hashPassword } from "@/lib/utils/utils";
 import { Eye, EyeOff, Lock, Mail } from "@/assets/icons";
 
@@ -41,27 +40,34 @@ const PasswordReset: FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Store hashed password for auto-login
+  const [hashedPassword, setHashedPassword] = useState("");
+
   useEffect(() => {
-    if (success) {
-      // Auto login after password reset
+    if (success && hashedPassword) {
+      // Auto login after password reset using the stored hashed password
       const autoLogin = async () => {
         try {
           const loginResponse = await login({
             email: user?.email ?? "",
-            password,
+            password: hashedPassword, // Use the stored hashed password
           });
-          if (!loginResponse.err) {
+
+          const { success: loginSuccess } = handleLoginSuccess(loginResponse);
+          if (loginSuccess) {
             navigate("/");
           } else {
+            setError("Auto-login failed after password reset");
             navigate("/login");
           }
         } catch (err) {
+          setError("Auto-login failed after password reset");
           navigate("/login");
         }
       };
       autoLogin();
     }
-  }, [success, navigate, user?.email, password]);
+  }, [success, navigate, user?.email, hashedPassword]);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +79,6 @@ const PasswordReset: FC = () => {
     }
 
     try {
-      // First check if user exists
       const existingUser = await checkUserExists(email, { fields: "id,email" });
       if (!existingUser?.result?.length) {
         setError("No account found with this email");
@@ -143,6 +148,8 @@ const PasswordReset: FC = () => {
       if (response.err) {
         setError("Failed to reset password");
       } else {
+        // Store hashed password for auto-login
+        setHashedPassword(hashedPassword);
         setSuccess(true);
       }
     } catch (err: any) {

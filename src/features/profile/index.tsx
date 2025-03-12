@@ -58,6 +58,10 @@ const Profile: FC = () => {
   const [avatarPreview, setAvatarPreview] = useState("");
   const [imageLoading, setImageLoading] = useState(false);
 
+  const handleContactSupport = () => {
+    window.location.href = "mailto:dr.sarmah.dilip@gmail.com";
+  };
+
   // Redirect if not logged in
   useEffect(() => {
     if (!isLoggedIn) {
@@ -453,7 +457,7 @@ const Profile: FC = () => {
             If you're having trouble with your account or have questions, our support team is here to help
           </p>
           <div className="space-y-2">
-            <Button variant="outline" className="w-full text-primary" onClick={() => navigate("/privacy")}>
+            <Button variant="outline" className="w-full text-primary" onClick={handleContactSupport}>
               Contact Support
             </Button>
           </div>
