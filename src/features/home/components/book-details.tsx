@@ -7,10 +7,9 @@ import { getBook } from "@/services/backend/actions";
 import { Image } from "@/components/common/image";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import BookSkeleton from "@/features/home/components/book-details-skeleton";
-import PdfViewer from "@/components/pdf-viewer";
 import Pay from "@/features/pay";
 import { useNavigate } from "react-router-dom";
-import { sendToNative } from "@/lib/utils/utils";
+import PdfViewer from "@/components/pdf-viewer";
 
 interface BookDetails {
   id: number;
@@ -30,6 +29,19 @@ const BookDetails: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isPdfVisible, setIsPdfVisible] = useState(false);
   const [pdfSource, setPdfSource] = useState("");
+
+  // Handle navigation state
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isPdfVisible) {
+        setIsPdfVisible(false);
+        setPdfSource("");
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isPdfVisible]);
   const { isLoggedIn, isSubscribed, isSubscriptionExpired } = store.auth.get();
   const { books: bookmarkedBooks } = store.bookmark() as any;
 
@@ -117,20 +129,10 @@ const BookDetails: FC = () => {
               <Button
                 className="w-full"
                 size="lg"
-                onClick={async () => {
-                  try {
-                    const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
-                    console.log("pdfUrl", pdfUrl);
-                    // sendToNative({
-                    //   type: "pdf",
-                    //   pdfUrl,
-                    // });
-                    setPdfSource(pdfUrl);
-                    setIsPdfVisible(true);
-                  } catch (error) {
-                    console.error("Error accessing PDF:", error);
-                    // Handle error appropriately
-                  }
+                onClick={() => {
+                  const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
+                  setPdfSource(pdfUrl);
+                  setIsPdfVisible(true);
                 }}
               >
                 Read Now
@@ -158,15 +160,12 @@ const BookDetails: FC = () => {
           )}
         </div>
       </div>
-      {isPdfVisible && (
-        <PdfViewer
-          pdfUrl={pdfSource}
-          onClose={() => {
-            setIsPdfVisible(false);
-            setPdfSource("");
-          }}
-        />
-      )}
+      <PdfViewer
+        isOpen={isPdfVisible}
+        onClose={() => setIsPdfVisible(false)}
+        pdfUrl={pdfSource}
+        title={book.name}
+      />
     </div>
   );
 };

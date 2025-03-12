@@ -142,7 +142,10 @@ export async function checkUserExists(email: string, options = {}) {
   }
 }
 
-export async function signup(userData: { email: string; password: string; name: string; phone?: string }) {
+export async function signup(
+  userData: { email: string; password: string; name: string; phone?: string },
+  options = {}
+) {
   try {
     // First create user
     const createUserResponse = await createUser(userData);
@@ -152,7 +155,10 @@ export async function signup(userData: { email: string; password: string; name: 
   }
 }
 
-export async function createUser(userData: { email: string; password: string; name: string; phone?: string }) {
+export async function createUser(
+  userData: { email: string; password: string; name: string; phone?: string },
+  options = {}
+) {
   try {
     // Check if user exists first
     const existingUser: any = await checkUserExists(userData.email);
@@ -227,16 +233,23 @@ export async function checkForceFlags(userId: string, options = {}) {
 }
 
 // Book Actions
-export async function createBook(data: any) {
+export async function createBook(data: any, options = {}) {
   try {
-    const response = await bookApi.create(formatBookData(data));
+    const response = await bookApi.create(formatBookData(data), options);
     return debug.log("Create Book", response);
   } catch (error) {
     return debug.error("Create Book", error);
   }
 }
 
-export async function updateBook(id: string, data: any) {}
+export async function updateBook(id: string, data: any, options = {}) {
+  try {
+    const response = await bookApi.update(id, data, options);
+    return debug.log("Update Book", response);
+  } catch (error) {
+    return debug.error("Update Book", error);
+  }
+}
 
 export async function getBooks() {
   try {
@@ -262,28 +275,6 @@ export async function deleteBook(id: string, options = {}) {
     return debug.log("Delete Book", response);
   } catch (error) {
     return debug.error("Delete Book", error);
-  }
-}
-
-// Review Actions
-export async function getBookReviews(bookId: string, options = {}) {
-  try {
-    const response = await Api.get(`/products/${bookId}/reviews`, options);
-    return debug.log("Get Book Reviews", response);
-  } catch (error) {
-    return debug.error("Get Book Reviews", error);
-  }
-}
-
-export async function submitBookReview(bookId: string, data: { rating: number; review: string }, options = {}) {
-  try {
-    const response = await Api.post(`/products/${bookId}/reviews`, {
-      body: data,
-      ...options,
-    });
-    return debug.log("Submit Book Review", response);
-  } catch (error) {
-    return debug.error("Submit Book Review", error);
   }
 }
 

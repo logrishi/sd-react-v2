@@ -166,7 +166,7 @@ const AddBook: FC = () => {
       if (imageFile) {
         try {
           // uploadMedia will automatically compress image files
-          const uploadResponse = await uploadMedia(imageFile, "sample");
+          const uploadResponse = await uploadMedia(imageFile, "images");
           imageUrl = uploadResponse?.files?.image;
         } catch (error) {
           console.error("Error uploading image:", error);
@@ -192,7 +192,7 @@ const AddBook: FC = () => {
       // Upload audio if changed
       if (audioFile) {
         try {
-          const uploadResponse = await uploadMedia(audioFile, "audio");
+          const uploadResponse = await uploadMedia(audioFile, "audios");
           audioUrl = uploadResponse?.files?.image;
         } catch (error) {
           console.error("Error uploading audio:", error);

@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/common/ui/input";
 import { Label } from "@/components/common/ui/label";
 import { Separator } from "@/components/common/ui/separator";
-import { Switch } from "@/components/common/ui/switch";
 import { store } from "@/services/store";
 import { useState, useEffect } from "react";
 import {
@@ -39,9 +38,7 @@ import { Badge } from "@/components/common/ui/badge";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { getEnvVar } from "@/lib/utils/env-vars";
-import { navigateTo } from "@/lib/utils/navigate-to";
 import { handleLogout, updateUser, uploadMedia } from "@/services/backend/actions";
-import { compressImage } from "@/lib/utils/image-compression";
 
 dayjs.extend(relativeTime);
 
@@ -59,6 +56,7 @@ const Profile: FC = () => {
   const [loading, setLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
+  const [imageLoading, setImageLoading] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -84,11 +82,11 @@ const Profile: FC = () => {
     try {
       const formData = new FormData(e.currentTarget);
       const name = formData.get("name") as string;
-      const email = formData.get("email") as string;
 
       // Input validation
-      if (!name || !email) {
-        setError("Please fill in all required fields");
+      if (!name?.trim()) {
+        setError("Please enter your name");
+        setLoading(false);
         return;
       }
 
@@ -97,8 +95,15 @@ const Profile: FC = () => {
       // Handle avatar upload if changed
       if (avatarFile) {
         try {
+          // Compress image before upload
           const uploadResponse = await uploadMedia(avatarFile, "users");
-          imageUrl = uploadResponse?.files?.image;
+          console.log("uploadResponse", uploadResponse);
+          if (uploadResponse?.files?.image) {
+            imageUrl = uploadResponse.files.image;
+            // imageUrl = uploadResponse.path.replace(`${getEnvVar("VITE_IMAGE_URL")}/`, "");
+          } else {
+            throw new Error("Upload response is missing image path");
+          }
         } catch (error) {
           console.error("Error uploading avatar:", error);
           setError("Failed to upload avatar. Please try again.");
@@ -106,25 +111,23 @@ const Profile: FC = () => {
         }
       }
 
-      // Update user profile
-      // const updateResponse = await updateUser(user.id, {
-      //   name,
-      //   email,
-      //   image: imageUrl,
-      // });
+      // Update user profile in backend - only send name and image
+      const updateResponse = await updateUser(user.id, {
+        name,
+        image: imageUrl,
+      });
 
-      // if (updateResponse.err) {
-      //   throw new Error("Failed to update profile");
-      // }
+      if (updateResponse.err) {
+        throw new Error("Failed to update profile");
+      }
 
-      // Update local store
+      // Update local store after successful backend update
       const currentAuth = store.auth.get();
       store.auth.set({
         ...currentAuth,
         user: {
           ...currentAuth.user,
           name,
-          email,
           image: imageUrl,
         },
       });
@@ -139,28 +142,25 @@ const Profile: FC = () => {
     }
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Cleanup previous preview
-      // if (avatarPreview) {
-      //   URL.revokeObjectURL(avatarPreview);
-      // }
-
-      // // Create new preview
-      // const previewUrl = URL.createObjectURL(file);
-      // setAvatarFile(file);
-      // setAvatarPreview(previewUrl);
-
-      try {
-        const uploadResponse = await uploadMedia(file, "users");
-        setAvatarFile(file);
-        setAvatarPreview(uploadResponse?.files?.image);
-      } catch (error) {
-        console.error("Error uploading avatar:", error);
-        setError("Failed to upload avatar. Please try again.");
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file");
         return;
       }
+
+      // Cleanup previous preview
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+
+      // Create new preview
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarFile(file);
+      setAvatarPreview(previewUrl);
+      setError(""); // Clear any previous errors
     }
   };
 
@@ -236,19 +236,29 @@ const Profile: FC = () => {
             <div className="flex flex-col items-center justify-center min-h-[180px] space-y-4">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  {avatarPreview || user.image ? (
-                    <AvatarImage
-                      src={avatarPreview || (user.image ? `${getEnvVar("VITE_IMAGE_URL")}/${user.image}` : "")}
-                      alt={user.name}
-                      className="object-cover"
-                    />
-                  ) : (
-                    <AvatarFallback className="text-lg font-bold">
-                      {user.name?.split(" ").length > 1
-                        ? `${user.name.split(" ")[0][0]}${user.name.split(" ").pop()?.[0]}`.toUpperCase()
-                        : user.name?.[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  )}
+                  <AvatarImage
+                    src={
+                      avatarPreview ? avatarPreview : user.image ? `${getEnvVar("VITE_IMAGE_URL")}/${user.image}` : ""
+                    }
+                    alt={user.name}
+                    className="object-cover"
+                    onLoadStart={() => setImageLoading(true)}
+                    onLoad={() => setImageLoading(false)}
+                    onError={(e) => {
+                      setImageLoading(false);
+                      // Hide broken image icon
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                  <AvatarFallback className="text-lg font-bold">
+                    {imageLoading ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : user.name?.split(" ").length > 1 ? (
+                      `${user.name.split(" ")[0][0]}${user.name.split(" ").pop()?.[0]}`.toUpperCase()
+                    ) : (
+                      user.name?.[0]?.toUpperCase()
+                    )}
+                  </AvatarFallback>
                 </Avatar>
                 {isEditing && (
                   <label
@@ -301,7 +311,7 @@ const Profile: FC = () => {
                   type="email"
                   defaultValue={user.email}
                   placeholder="Email"
-                  disabled={!isEditing || loading}
+                  disabled={true}
                   className="pl-12"
                   required
                 />
