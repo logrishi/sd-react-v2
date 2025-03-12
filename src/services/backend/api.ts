@@ -298,8 +298,13 @@ function buildEndpoint(resourceName: string, id?: string | number): string {
   return id ? `${base}/${id}` : base;
 }
 
+// Auth resource type for authentication operations
+type AuthResource<T = any, C = any> = {
+  check: (credentials: C, options?: RequestOptions) => Promise<T>;
+};
+
 // Enhanced API interface with typed CRUD operations
-interface ApiInterface {
+type ApiInterface = {
   get: <T = any>(endpoint: string, options?: RequestOptions) => Promise<T>;
   post: <T = any>(endpoint: string, options?: RequestOptions) => Promise<T>;
   put: <T = any>(endpoint: string, options?: RequestOptions) => Promise<T>;
@@ -318,7 +323,10 @@ interface ApiInterface {
     update: (id: string | number, data: Partial<T>, options?: RequestOptions) => Promise<T>;
     remove: (id: string | number, options?: RequestOptions) => Promise<void>;
   };
-}
+
+  // Auth resource factory
+  auth: <T = any, C = any>(resourceName: string) => AuthResource<T, C>;
+};
 
 // Create the API instance with all methods
 const Api: ApiInterface = {
@@ -338,6 +346,12 @@ const Api: ApiInterface = {
     update: (id, data, options = {}) =>
       makeRequest<T>("put", buildEndpoint(resourceName, id), { ...options, body: data }),
     remove: (id, options = {}) => makeRequest<void>("delete", buildEndpoint(resourceName, id), options),
+  }),
+
+  // Auth resource factory
+  auth: <T>(resourceName: string) => ({
+    check: (credentials, options = {}) =>
+      makeRequest<T>("post", buildEndpoint(resourceName), { ...options, body: credentials }),
   }),
 };
 

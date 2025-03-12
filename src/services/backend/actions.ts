@@ -18,8 +18,10 @@ const debug = {
   },
 };
 
+// Create auth API instance
+const authApi = Api.auth("auth-users");
+
 // Create resource instances
-const authApi = Api.resource("auth-users");
 const userApi = Api.resource("users");
 const bookApi = Api.resource("products");
 
@@ -106,7 +108,7 @@ export async function login(
   }
 ) {
   try {
-    const response = await authApi.create(credentials, options);
+    const response = await authApi.check(credentials, options);
     if (!response.err) {
       // Update last_login timestamp
       await userApi.update(response.result.id, {
@@ -232,7 +234,7 @@ export async function createBook(data: any, options = {}) {
 
 export async function updateBook(id: string, data: any, options = {}) {
   try {
-    const response = await bookApi.update(id, data, options);
+    const response = await bookApi.update(id, formatBookData(data), options);
     return debug.log("Update Book", response);
   } catch (error) {
     return debug.error("Update Book", error);
@@ -241,7 +243,10 @@ export async function updateBook(id: string, data: any, options = {}) {
 
 export async function getBooks(options = { sort: "-created_at", filter: "is_deleted:0" }) {
   try {
-    const response = await bookApi.getAll(options);
+    const response: any = await bookApi.getAll(options);
+    if (!response.err && Array.isArray(response.result)) {
+      response.result = response.result.map((book: any) => formatBookData(book));
+    }
     return debug.log("Get Books", response);
   } catch (error) {
     return debug.error("Get Books", error);
@@ -250,7 +255,10 @@ export async function getBooks(options = { sort: "-created_at", filter: "is_dele
 
 export async function getBook(id: string, options = { filter: "is_deleted:0" }) {
   try {
-    const response = await bookApi.getOne(id, options);
+    const response: any = await bookApi.getOne(id, options);
+    if (!response.err && Array.isArray(response.result)) {
+      response.result = response.result.map((book: any) => formatBookData(book));
+    }
     return debug.log("Get Book", response);
   } catch (error) {
     return debug.error("Get Book", error);

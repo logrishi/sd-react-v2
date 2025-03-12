@@ -14,6 +14,7 @@ interface Book {
   description: string;
   category: string;
   image: string;
+  is_free: boolean;
 }
 
 const Bookmark: FC = () => {
@@ -78,11 +79,22 @@ const Bookmark: FC = () => {
                         alt={book.name}
                         className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
+                      {book.is_free && (
+                        <div className="absolute top-4 left-4">
+                          <Badge variant="secondary" className="bg-success/80 text-white hover:bg-success/20">
+                            Free
+                          </Badge>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                        <Badge variant="secondary" className="bg-background/80 hover:bg-background/80">
-                          {book.category}
-                        </Badge>
+                        <div className="flex items-center">
+                          {book.category ? (
+                            <Badge variant="secondary" className="bg-background/80 hover:bg-background/80">
+                              {book.category}
+                            </Badge>
+                          ) : null}
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"

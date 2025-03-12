@@ -2,6 +2,7 @@ import { useEffect, useParams, useState, useMemo, type FC } from "@/lib/vendors"
 import { Bookmark } from "@/assets/icons";
 import { store } from "@/services/store";
 import { Button } from "@/components/common/ui/button";
+import { Badge } from "@/components/common/ui/badge";
 import AudioPlayer from "@/components/common/audio-player";
 import { getBook } from "@/services/backend/actions";
 import { Image } from "@/components/common/image";
@@ -19,6 +20,7 @@ interface BookDetails {
   image: string;
   book: string;
   audio?: string;
+  is_free: boolean;
 }
 
 const BookDetails: FC = () => {
@@ -39,8 +41,8 @@ const BookDetails: FC = () => {
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [isPdfVisible]);
   const { isLoggedIn, isSubscribed, isSubscriptionExpired } = store.auth.get();
   const { books: bookmarkedBooks } = store.bookmark() as any;
@@ -98,7 +100,14 @@ const BookDetails: FC = () => {
             alt={book.name}
             className="h-full w-full object-cover"
           />
-          {book && (
+          {book?.is_free ? (
+            <div className="absolute top-2 left-4 z-10">
+              <Badge variant="secondary" className="bg-success/80 text-white hover:bg-success/20">
+                Free
+              </Badge>
+            </div>
+          ) : null}
+          {book ? (
             <Button
               variant="ghost"
               size="icon"
@@ -107,11 +116,22 @@ const BookDetails: FC = () => {
             >
               <Bookmark className="h-5 w-5" fill={isBookmarked ? "currentColor" : "none"} />
             </Button>
-          )}
+          ) : null}
         </div>
 
-        <div className="space-y-4 text-center">
-          <h1 className="text-3xl font-bold">{book.name}</h1>
+        <div className="relative">
+          <div className="space-y-4 text-center">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{book.name}</h1>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                {book.category ? (
+                  <Badge variant="secondary" className="bg-foreground  text-background hover:bg-foreground/80">
+                    {book.category}
+                  </Badge>
+                ) : null}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -160,12 +180,7 @@ const BookDetails: FC = () => {
           )}
         </div>
       </div>
-      <PdfViewer
-        isOpen={isPdfVisible}
-        onClose={() => setIsPdfVisible(false)}
-        pdfUrl={pdfSource}
-        title={book.name}
-      />
+      <PdfViewer isOpen={isPdfVisible} onClose={() => setIsPdfVisible(false)} pdfUrl={pdfSource} title={book.name} />
     </div>
   );
 };

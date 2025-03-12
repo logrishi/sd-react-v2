@@ -408,32 +408,11 @@ const Profile: FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Security</CardTitle>
-          <CardDescription>Manage your account security and privacy</CardDescription>
+          <CardTitle>Privacy Policy</CardTitle>
+          <CardDescription>Read our privacy policy to understand how we handle your data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="flex items-center space-x-2">
-                <Lock className="h-5 w-5" />
-                <Label>Password</Label>
-              </div>
-            </div>
-            <Button variant="outline" onClick={() => navigate("/password-reset")}>
-              Change Password
-            </Button>
-          </div>
-
-          <Separator />
-
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-5 w-5" />
-              <Label>Privacy Policy</Label>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Read our privacy policy to understand how we handle your data
-            </p>
             <Button variant="link" className="px-0" asChild onClick={() => navigate("/privacy")}>
               <p className="text-sm">
                 View Privacy Policy <ExternalLink className="ml-1 h-4 w-4" />

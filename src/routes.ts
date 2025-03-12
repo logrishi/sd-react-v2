@@ -69,7 +69,7 @@ export const routes: RouteConfig[] = [
     layoutProps: {
       showBackButton: true,
       headerTitle: "Book Details",
-      headerRightIcons: ["bookmarks", "cart"],
+      // headerRightIcons: ["bookmarks"],
       showBottomTabs: false,
     },
   },
