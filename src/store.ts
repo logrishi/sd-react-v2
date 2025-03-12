@@ -20,6 +20,7 @@ export const store = {
     books: [],
     searchQuery: "",
     selectedCategory: "all",
+    showFreeOnly: false,
   },
 
   product: {
@@ -86,8 +87,14 @@ export const store = {
     currentPayment: {
       txnId: "",
       timestamp: 0,
-      userId: ""
+      userId: "",
     },
     persist: false,
+  },
+
+  appSettings: {
+    categories: [] as string[],
+    price: 0,
+    persist: true,
   },
 };

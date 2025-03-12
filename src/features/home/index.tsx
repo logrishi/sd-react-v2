@@ -2,12 +2,14 @@ import { type FC } from "@/lib/vendors";
 import BookCardSkeleton from "./components/book-card-skeleton";
 import { Button } from "@/components/common/ui/button";
 import { Card, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/common/ui/card";
+import { Switch } from "@/components/common/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
-import { BookmarkIcon, BookOpen, Headphones } from "@/assets/icons";
+import { BookmarkIcon, BookOpen, Headphones, IndianRupee } from "@/assets/icons";
 import { store } from "@/services/store";
 import { useEffect, useState } from "react";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
-import { getBooks } from "@/services/backend/actions";
+import { getBooks, getSettings } from "@/services/backend/actions";
+import { cn } from "@/lib/utils/utils";
 import { sanitizeText } from "@/lib/utils/text-utils";
 import { Badge } from "@/components/common/ui/badge";
 import { getEnvVar } from "@/lib/utils/env-vars";
@@ -26,7 +28,7 @@ interface Book {
 }
 
 const Home: FC = () => {
-  const { books, searchQuery, selectedCategory } = store.library();
+  const { books, searchQuery, selectedCategory, showFreeOnly = false } = store.library();
   const [loading, setLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -54,21 +56,34 @@ const Home: FC = () => {
   }, [isLoggedIn, isSubscribed, isSubscriptionExpired]);
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await getBooks();
-        if (!response.err) {
-          store.library.set({ books: response.result });
+        const [settingsResponse, booksResponse] = await Promise.all([getSettings(), getBooks()]);
+        console.log("booksResponse", booksResponse);
+        if (!booksResponse.err) {
+          store.library.set({ books: booksResponse.result });
+        }
+
+        if (!settingsResponse.err && settingsResponse.result?.length > 0) {
+          const categories = settingsResponse.result.find(
+            (s: { setting_key: string }) => s.setting_key === "categories"
+          );
+          const price = settingsResponse.result.find((s: { setting_key: string }) => s.setting_key === "price");
+
+          store.appSettings.set({
+            categories: categories?.config || [],
+            price: price?.value || 0,
+          });
         }
       } catch (error) {
-        console.error("Error fetching books:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBooks();
+    fetchData();
   }, []);
 
   const handleSearch = (query: string) => {
@@ -77,6 +92,10 @@ const Home: FC = () => {
 
   const handleCategoryChange = (category: string) => {
     store.library.set({ selectedCategory: category });
+  };
+
+  const toggleFreeFilter = () => {
+    store.library.set({ showFreeOnly: !showFreeOnly });
   };
 
   const { books: bookmarkedBooks } = store.bookmark() as any;
@@ -91,10 +110,13 @@ const Home: FC = () => {
 
   // Only filter books if there's a search query or category selected
   const displayedBooks = (books as Book[]).filter((book) => {
-    // If no search query and category is 'all', show all books
-    if (!searchQuery && selectedCategory === "all") {
+    // If no search query, category is 'all', and not filtering for free books, show all books
+    if (!searchQuery && selectedCategory === "all" && !showFreeOnly) {
       return true;
     }
+
+    // Apply free filter if enabled
+    const matchesFree = !showFreeOnly || book.is_free;
 
     // Apply search filter if there's a query
     const matchesSearch =
@@ -105,7 +127,7 @@ const Home: FC = () => {
     // Apply category filter if a specific category is selected
     const matchesCategory = selectedCategory === "all" || book.category === selectedCategory;
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesFree;
   });
 
   return (
@@ -160,30 +182,32 @@ const Home: FC = () => {
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold tracking-tight">Explore Our Collection</h2>
+              <div className="flex items-center space-x-3">
+                <Switch
+                  checked={showFreeOnly}
+                  onCheckedChange={toggleFreeFilter}
+                  className="data-[state=checked]:bg-primary"
+                />
+                <div className="flex items-center space-x-1.5">
+                  {/* <IndianRupee className={cn("h-4 w-4", showFreeOnly ? "text-muted-foreground line-through" : "text-primary")} /> */}
+                  <span className="text-sm font-medium leading-none">Free Books Only</span>
+                </div>
+              </div>
             </div>
             <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full">
               <TabsList className="w-full justify-start mb-4 bg-transparent">
                 <TabsTrigger value="all" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                   All
                 </TabsTrigger>
-                <TabsTrigger
-                  value="fiction"
-                  className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                >
-                  Fiction
-                </TabsTrigger>
-                <TabsTrigger
-                  value="non-fiction"
-                  className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                >
-                  Non-Fiction
-                </TabsTrigger>
-                <TabsTrigger
-                  value="technology"
-                  className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                >
-                  Technology
-                </TabsTrigger>
+                {store.appSettings.get().categories.map((category: string) => (
+                  <TabsTrigger
+                    key={category}
+                    value={category.toLowerCase()}
+                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                  >
+                    {category}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
 

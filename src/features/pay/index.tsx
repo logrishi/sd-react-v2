@@ -66,15 +66,11 @@ const Pay = () => {
     const num = Math.floor(Math.random() * 10);
     rand = "txnId" + milliseconds + num;
     const txnId: any = rand.toString();
-    console.log("milliseconds", milliseconds);
-    console.log("num", num);
-    console.log("rand", rand);
-    console.log("txnId", txnId);
     try {
       const res = await axios.post("https://arodos-payments.vercel.app/pay", {
         txnId: txnId,
         userId: store.auth.get().user.id,
-        amount: 1,
+        amount: store.appSettings.get().price,
         mobileNumber: 9954066643,
         // redirectUrl: `https://saraighatdigital-pay.netlify.app/status/${txnId}`,
         // redirectUrl: `http://localhost:5173/status/${txnId}`,
@@ -84,11 +80,9 @@ const Pay = () => {
             : `http://localhost:5173/status/${txnId}`,
         callbackUrl: `https://arodos-payments.vercel.app/checkStatus/${txnId}`,
       });
-      console.log("res", res.data);
-      // alert(res.data);
       window.open(res.data, "_self");
     } catch (error: any) {
-      console.log("error", error);
+      // console.log("error", error);
     } finally {
       setLoading(false);
     }

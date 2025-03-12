@@ -24,6 +24,7 @@ const authApi = Api.auth("auth-users");
 // Create resource instances
 const userApi = Api.resource("users");
 const bookApi = Api.resource("products");
+const settingsApi = Api.resource("settings");
 
 // User Actions
 
@@ -271,6 +272,16 @@ export async function deleteBook(id: string, options = {}) {
     return debug.log("Delete Book", response);
   } catch (error) {
     return debug.error("Delete Book", error);
+  }
+}
+
+// Settings Actions
+export async function getSettings(options = {}) {
+  try {
+    const response: any = await settingsApi.getAll(options);
+    return debug.log("Get Settings", response);
+  } catch (error) {
+    return debug.error("Get Settings", error);
   }
 }
 
