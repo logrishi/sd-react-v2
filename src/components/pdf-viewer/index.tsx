@@ -1,7 +1,14 @@
-import { type FC, useEffect, useState } from "react";
-import { X, Loader2 } from "@/assets/icons";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+
+import { FC, useEffect, useState, useRef } from "react";
+import { X, Loader2, ZoomIn, ZoomOut } from "@/assets/icons";
 import { Button } from "@/components/common/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/common/ui/dialog";
+import { Document, Page, pdfjs } from "react-pdf";
+import { useResizeObserver } from "@/lib/hooks/use-resize-observer";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
 interface PdfViewerProps {
   pdfUrl: string;
@@ -12,6 +19,11 @@ interface PdfViewerProps {
 
 const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [numPages, setNumPages] = useState(0);
+  const [scale, setScale] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const containerRef: any = useRef<HTMLDivElement>(null);
+  const { width = 0 } = useResizeObserver(containerRef);
 
   // Reset loading state when PDF URL changes or dialog opens
   useEffect(() => {
@@ -26,13 +38,11 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
       setIsLoading(true);
     }
   }, [isOpen]);
+
   // Prevent right-click on iframe
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
-      const iframe = document.querySelector("iframe");
-      if (iframe && iframe.contains(e.target as Node)) {
-        e.preventDefault();
-      }
+      e.preventDefault();
     };
 
     document.addEventListener("contextmenu", handleContextMenu);
@@ -51,6 +61,53 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Track current page on scroll
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || isLoading) return;
+
+    const handleScroll = () => {
+      requestAnimationFrame(() => {
+        const pages = Array.from(container.getElementsByClassName("pdf-page")) as HTMLElement[];
+        if (pages.length === 0) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const containerTop = containerRect.top;
+
+        // Find the first page that's mostly visible in the viewport
+        for (let i = 0; i < pages.length; i++) {
+          const rect = pages[i].getBoundingClientRect();
+          const relativeTop = rect.top - containerTop;
+          const visibleHeight = Math.min(rect.bottom, containerRect.bottom) - Math.max(rect.top, containerRect.top);
+
+          if (visibleHeight > rect.height * 0.3) {
+            // Page is at least 30% visible
+            setCurrentPage(i + 1);
+            break;
+          }
+        }
+      });
+    };
+
+    // Wait a bit for the PDF to render properly
+    const timeoutId = setTimeout(() => {
+      handleScroll();
+    }, 100);
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timeoutId);
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [numPages, isLoading]);
+
+  function onLoadSuccess({ numPages }: { numPages: number }) {
+    setNumPages(numPages);
+    setCurrentPage(1); // Reset to first page
+    setIsLoading(false);
+  }
 
   return (
     <Dialog
@@ -75,7 +132,39 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex-1 min-h-0 relative bg-background" onContextMenu={(e) => e.preventDefault()}>
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/40">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>
+              Page {currentPage} of {numPages}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
+              disabled={scale <= 0.5}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground w-12 text-center">{Math.round(scale * 100)}%</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setScale((prev) => Math.min(2, prev + 0.1))}
+              disabled={scale >= 2}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div
+          ref={containerRef}
+          className="flex-1 min-h-0 relative bg-background overflow-y-auto"
+          onContextMenu={(e) => e.preventDefault()}
+        >
           {isLoading && (
             <div className="absolute inset-0 z-[90] flex items-center justify-center bg-background">
               <div className="flex flex-col items-center gap-4 select-none">
@@ -88,18 +177,28 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
               </div>
             </div>
           )}
-          <iframe
-            src={`${pdfUrl}#toolbar=0&view=FitH&scrollbar=0&embedded=true&navpanes=0&print-hide=true&download=false`}
-            className="absolute inset-0 w-full h-full"
-            style={{
-              border: "none",
-              backgroundColor: "white",
-              pointerEvents: "auto",
-              visibility: isLoading ? "hidden" : "visible",
-            }}
-            onLoad={() => setIsLoading(false)}
-            onContextMenu={(e) => e.preventDefault()}
-          />
+          <div className="w-full flex flex-col items-center" style={{ minHeight: "calc(100vh - 8rem)" }}>
+            <Document
+              file={pdfUrl}
+              onLoadSuccess={onLoadSuccess}
+              loading={<></>}
+              error={<></>}
+              className="flex flex-col items-center py-6 w-full"
+              renderMode="canvas"
+            >
+              {Array.from(new Array(numPages), (_, index) => (
+                <div
+                  key={`page_${index + 1}`}
+                  className="mb-8 shadow-lg pdf-page"
+                  style={{
+                    marginBottom: index === numPages - 1 ? "calc(100vh - 12rem)" : "2rem",
+                  }}
+                >
+                  <Page pageNumber={index + 1} width={Math.max(width * 0.9, 320)} scale={scale} className="bg-white" />
+                </div>
+              ))}
+            </Document>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -173,15 +173,8 @@ const BookDetails: FC = () => {
                   size="lg"
                   onClick={() => {
                     const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
-                    {
-                      store.isNative.get().isNative
-                        ? sendToNative({
-                            type: "open_pdf",
-                            pdfUrl,
-                          })
-                        : setPdfSource(pdfUrl);
-                      setIsPdfVisible(true);
-                    }
+                    setPdfSource(pdfUrl);
+                    setIsPdfVisible(true);
                   }}
                 >
                   Read Now

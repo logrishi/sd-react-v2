@@ -9,7 +9,6 @@ import { store } from "@/services/store";
 import { useEffect, useState } from "react";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import { getBooks, getSettings } from "@/services/backend/actions";
-import { cn } from "@/lib/utils/utils";
 import { sanitizeText } from "@/lib/utils/text-utils";
 import { Badge } from "@/components/common/ui/badge";
 import { getEnvVar } from "@/lib/utils/env-vars";
@@ -218,6 +217,15 @@ const Home: FC = () => {
                   <BookCardSkeleton key={n} />
                 ))}
               </div>
+            ) : displayedBooks.length === 0 ? (
+              <Card className="p-8 text-center">
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="rounded-full bg-muted p-6">
+                    <BookOpen className="h-12 w-12 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-muted-foreground">No results found</h3>
+                </div>
+              </Card>
             ) : (
               <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {displayedBooks.map((book) => (
@@ -232,13 +240,13 @@ const Home: FC = () => {
                         alt={book.name}
                         className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
-                      {book.is_free && (
+                      {book.is_free ? (
                         <div className="absolute top-4 left-4">
                           <Badge variant="secondary" className="bg-success/80 text-white hover:bg-success/20">
                             Free
                           </Badge>
                         </div>
-                      )}
+                      ) : null}
                       <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                         <div className="flex items-center">
@@ -271,14 +279,6 @@ const Home: FC = () => {
                     <CardFooter className="p-4 pt-0 flex items-center justify-between"></CardFooter>
                   </Card>
                 ))}
-                {displayedBooks?.length === 0 && searchQuery && (
-                  <Card className="col-span-full p-6 text-center">
-                    <CardTitle className="text-muted-foreground">No books found</CardTitle>
-                    <CardDescription>
-                      Try adjusting your search or filters to find what you're looking for.
-                    </CardDescription>
-                  </Card>
-                )}
               </div>
             )}
           </section>

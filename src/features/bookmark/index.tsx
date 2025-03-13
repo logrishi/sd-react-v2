@@ -116,10 +116,15 @@ const Bookmark: FC = () => {
                 ))}
                 {bookmarkedBooks.length === 0 && (
                   <Card className="col-span-full p-6 text-center">
-                    <h3 className="text-lg font-semibold text-muted-foreground">No bookmarks yet</h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Start adding books to your bookmarks to see them here.
-                    </p>
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="rounded-full bg-muted p-6">
+                        <BookmarkIcon className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-muted-foreground">No bookmarks yet</h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Start adding books to your bookmarks to see them here.
+                      </p>
+                    </div>
                   </Card>
                 )}
               </div>
