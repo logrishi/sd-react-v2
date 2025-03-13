@@ -50,7 +50,7 @@ export const Header: FC<HeaderProps> = ({
               <ChevronLeft className="h-5 w-5" />
             </Button>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
             <img src={logo} alt="Saraighat Digital Logo" className="h-8 w-auto" />
             <h1 className="text-lg font-semibold">{title}</h1>
           </div>

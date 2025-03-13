@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/common/ui/checkbox";
 import { useNavigate, useParams } from "react-router-dom";
 import { IndianRupee, FileText, Headphones, Image, Loader2, Eye } from "@/assets/icons";
 import { getEnvVar } from "@/lib/utils/env-vars";
+import { store } from "@/services/store";
 import { createBook, getBook, updateBook, uploadMedia } from "@/services/backend/actions";
 import AudioPlayer from "@/components/common/audio-player";
 
@@ -28,6 +29,7 @@ const AddBook: FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
+  const { categories } = store.appSettings.get();
 
   const [formData, setFormData] = useState<BookFormData>({
     name: "",
@@ -151,8 +153,14 @@ const AddBook: FC = () => {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.category) {
-        setError("Name and category are required");
+      const errors = [];
+      if (!formData.name?.trim()) errors.push("Name");
+      if (!formData.category?.trim()) errors.push("Category");
+      if (!isEditMode && !bookFile) errors.push("PDF Document");
+      if (!isEditMode && !imageFile) errors.push("Cover Image");
+
+      if (errors.length > 0) {
+        setError(`${errors.join(", ")} ${errors.length === 1 ? "is" : "are"} required`);
         setLoading(false);
         return;
       }
@@ -316,9 +324,9 @@ const AddBook: FC = () => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Books">Books</SelectItem>
-                    <SelectItem value="Magazines">Magazines</SelectItem>
-                    <SelectItem value="Newspapers">Newspapers</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -346,7 +354,7 @@ const AddBook: FC = () => {
 
               {/* Image Upload */}
               <div className="space-y-2">
-                <Label htmlFor="image">Cover Image</Label>
+                <Label htmlFor="image">Cover Image {!isEditMode && "*"}</Label>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="relative border rounded-md p-4 flex items-center hover:bg-muted/50 transition-colors">
                     {imagePreview && (
@@ -384,7 +392,7 @@ const AddBook: FC = () => {
 
               {/* PDF Upload */}
               <div className="space-y-2">
-                <Label htmlFor="book">PDF Document</Label>
+                <Label htmlFor="book">PDF Document {!isEditMode && "*"}</Label>
                 <div className="relative border rounded-md p-4 flex items-center hover:bg-muted/50 transition-colors">
                   {formData.book && (
                     <div
@@ -498,7 +506,7 @@ const AddBook: FC = () => {
               </Button>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditMode ? "Update Book" : "Create Book"}
+                {isEditMode ? "Update Book" : "Add Book"}
               </Button>
             </div>
           </form>

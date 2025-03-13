@@ -442,6 +442,7 @@ const Profile: FC = () => {
           </div>
         </CardContent>
       </Card>
+      <p className="text-xs text-center text-muted-foreground">VERSION: {getEnvVar("VITE_APP_VERSION")}</p>
     </div>
   );
 };

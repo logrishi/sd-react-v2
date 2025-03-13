@@ -48,7 +48,8 @@ const Books: FC = () => {
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      const response = await getBooks();
+      // Remove is_deleted filter to show all books in admin view
+      const response = await getBooks({ sort: "-created_at", filter: "" });
       if (!response.err) {
         setBooks(response.result || []);
       } else {
@@ -221,13 +222,17 @@ const Books: FC = () => {
                       {/* Status badge */}
                       <div className="absolute top-2 right-2">
                         {book.is_deleted ? (
-                          <Badge variant="destructive" className="text-xs px-1 py-0">Deleted</Badge>
+                          <Badge variant="destructive" className="text-xs px-1 py-0">
+                            Deleted
+                          </Badge>
                         ) : (
-                          <Badge variant="success" className="text-xs px-1 py-0">Active</Badge>
+                          <Badge variant="success" className="text-xs px-1 py-0">
+                            Active
+                          </Badge>
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Content section - fixed heights for each part */}
                     <CardContent className="p-3 flex-1 flex flex-col">
                       {/* Title section - fixed height */}
@@ -236,7 +241,7 @@ const Books: FC = () => {
                           {book.name}
                         </h3>
                       </div>
-                      
+
                       {/* Category/Price section - fixed height */}
                       <div className="flex justify-between items-center h-5 mb-1">
                         <span className="text-xs text-muted-foreground truncate max-w-[60%]">{book.category}</span>
@@ -296,7 +301,9 @@ const Books: FC = () => {
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 disabled={deleteLoading === book.id}
                               >
-                                {deleteLoading === book.id ? <Loader2 className="h-4 w-4 animate-spin mr-2 text-primary" /> : null}
+                                {deleteLoading === book.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2 text-primary" />
+                                ) : null}
                                 Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
