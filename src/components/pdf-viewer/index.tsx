@@ -22,6 +22,40 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [touchDistance, setTouchDistance] = useState<number | null>(null);
+  
+  // Calculate distance between two touch points
+  const getTouchDistance = (touches: TouchList) => {
+    if (touches.length < 2) return null;
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    );
+  };
+
+  // Handle touch events for pinch zoom
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      setTouchDistance(getTouchDistance(e.touches));
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 2 && touchDistance) {
+      e.preventDefault();
+      const newDistance = getTouchDistance(e.touches);
+      if (newDistance && touchDistance) {
+        const scaleDiff = (newDistance - touchDistance) * 0.01;
+        setScale(prev => Math.min(2, Math.max(0.5, prev + scaleDiff)));
+        setTouchDistance(newDistance);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchDistance(null);
+  };
   const containerRef: any = useRef<HTMLDivElement>(null);
   const { width = 0 } = useResizeObserver(containerRef);
 
@@ -45,9 +79,24 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
       e.preventDefault();
     };
 
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('touchstart', handleTouchStart as any, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove as any, { passive: false });
+      container.addEventListener('touchend', handleTouchEnd);
+    }
+
     document.addEventListener("contextmenu", handleContextMenu);
-    return () => document.removeEventListener("contextmenu", handleContextMenu);
-  }, []);
+    
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      if (container) {
+        container.removeEventListener('touchstart', handleTouchStart as any);
+        container.removeEventListener('touchmove', handleTouchMove as any);
+        container.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [touchDistance]);
 
   // Handle keyboard shortcuts that might enable saving
   useEffect(() => {
@@ -162,7 +211,7 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
         </div>
         <div
           ref={containerRef}
-          className="flex-1 min-h-0 relative bg-background overflow-y-auto"
+          className="flex-1 min-h-0 relative bg-background overflow-auto"
           onContextMenu={(e) => e.preventDefault()}
         >
           {isLoading && (
@@ -177,27 +226,36 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
               </div>
             </div>
           )}
-          <div className="w-full flex flex-col items-center" style={{ minHeight: "calc(100vh - 8rem)" }}>
-            <Document
-              file={pdfUrl}
-              onLoadSuccess={onLoadSuccess}
-              loading={<></>}
-              error={<></>}
-              className="flex flex-col items-center py-6 w-full"
-              renderMode="canvas"
-            >
-              {Array.from(new Array(numPages), (_, index) => (
-                <div
-                  key={`page_${index + 1}`}
-                  className="mb-8 shadow-lg pdf-page"
-                  style={{
-                    marginBottom: index === numPages - 1 ? "calc(100vh - 12rem)" : "2rem",
-                  }}
-                >
-                  <Page pageNumber={index + 1} width={Math.max(width * 0.9, 320)} scale={scale} className="bg-white" />
-                </div>
-              ))}
-            </Document>
+          <div className="min-w-full overflow-x-auto">
+            <div className="flex flex-col items-center" style={{ minHeight: "calc(100vh - 8rem)" }}>
+              <Document
+                file={pdfUrl}
+                onLoadSuccess={onLoadSuccess}
+                loading={<></>}
+                error={<></>}
+                className="py-6"
+                renderMode="canvas"
+              >
+                {Array.from(new Array(numPages), (_, index) => (
+                  <div
+                    key={`page_${index + 1}`}
+                    className="mb-8 shadow-lg pdf-page"
+                    style={{
+                      marginBottom: index === numPages - 1 ? "calc(100vh - 12rem)" : "2rem",
+                      width: `${Math.max(width * 0.9, 320) * scale}px`,
+                      margin: "0 auto"
+                    }}
+                  >
+                    <Page 
+                      pageNumber={index + 1} 
+                      width={Math.max(width * 0.9, 320)}
+                      scale={scale}
+                      className="bg-white" 
+                    />
+                  </div>
+                ))}
+              </Document>
+            </div>
           </div>
         </div>
       </DialogContent>

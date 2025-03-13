@@ -45,32 +45,32 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold">Welcome back, {user?.name || "User"}!</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.name || "User"}!</h1>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Quick Stats */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+          <h3 className="text-base md:text-lg font-semibold mb-4">Quick Stats</h3>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <span className="block text-2xl font-bold text-primary">{loading ? "..." : books.length}</span>
-              <span className="text-sm text-muted-foreground">Total Books</span>
+              <span className="block text-xl md:text-2xl font-bold text-primary">{loading ? "..." : books.length}</span>
+              <span className="text-xs md:text-sm text-muted-foreground">Total Books</span>
             </div>
             <div className="text-center">
-              <span className="block text-2xl font-bold text-primary">{loading ? "..." : books.length}</span>
-              <span className="text-sm text-muted-foreground">PDF Books</span>
+              <span className="block text-xl md:text-2xl font-bold text-primary">{loading ? "..." : books.length}</span>
+              <span className="text-xs md:text-sm text-muted-foreground">PDF Books</span>
             </div>
             <div className="text-center">
-              <span className="block text-2xl font-bold text-primary">{loading ? "..." : books.filter(b => b.audio).length}</span>
-              <span className="text-sm text-muted-foreground">Audio Books</span>
+              <span className="block text-xl md:text-2xl font-bold text-primary">{loading ? "..." : books.filter(b => b.audio).length}</span>
+              <span className="text-xs md:text-sm text-muted-foreground">Audio Books</span>
             </div>
           </div>
         </Card>
 
         {/* Quick Actions */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+          <h3 className="text-base md:text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
             <Button 
               variant="outline" 

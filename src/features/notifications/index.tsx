@@ -105,7 +105,7 @@ const Notifications: FC = () => {
                           <div className="flex items-start justify-between">
                             <div>
                               <h3 className="font-semibold">{notification.title}</h3>
-                              <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                              <p className="text-xs md:text-sm text-muted-foreground mt-1">{notification.message}</p>
                             </div>
                             <div className="flex flex-col items-end gap-2">
                               <Badge variant="outline" className="text-xs">
@@ -156,8 +156,8 @@ const Notifications: FC = () => {
                       <div className="rounded-full bg-muted p-6">
                         <BellOff className="h-12 w-12 text-muted-foreground" />
                       </div>
-                      <h3 className="text-xl font-semibold text-muted-foreground">No notifications yet</h3>
-                      <p className="text-sm text-muted-foreground max-w-md">
+                      <h3 className="text-lg md:text-xl font-semibold text-muted-foreground">No notifications yet</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground max-w-md">
                         You don't have any notifications at the moment. We'll notify you when there are updates or
                         important information.
                       </p>

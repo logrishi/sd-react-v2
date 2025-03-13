@@ -73,8 +73,8 @@ const Signup: FC = () => {
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Sign up</CardTitle>
-            <CardDescription>Create an account to get started</CardDescription>
+            <CardTitle className="text-xl md:text-2xl">Sign up</CardTitle>
+            <CardDescription className="text-xs md:text-sm">Create an account to get started</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,7 +92,7 @@ const Signup: FC = () => {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-12"
+                    className="pl-12 placeholder:text-xs md:placeholder:text-sm"
                     disabled={loading}
                   />
                 </div>
@@ -110,7 +110,7 @@ const Signup: FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-12"
+                    className="pl-12 placeholder:text-xs md:placeholder:text-sm"
                     disabled={loading}
                   />
                 </div>
@@ -128,7 +128,7 @@ const Signup: FC = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-12 pr-10"
+                    className="pl-12 pr-10 placeholder:text-xs md:placeholder:text-sm"
                     disabled={loading}
                   />
                   <Button
@@ -147,7 +147,7 @@ const Signup: FC = () => {
                 </div>
               </div>
 
-              {error && <div className="text-sm text-destructive">{error}</div>}
+              {error && <div className="text-xs md:text-sm text-destructive">{error}</div>}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
@@ -160,9 +160,9 @@ const Signup: FC = () => {
                 )}
               </Button>
 
-              <div className="text-center text-sm">
+              <div className="text-center text-xs md:text-sm">
                 Already have an account?{" "}
-                <Button variant="link" className="px-0" type="button" onClick={() => navigate("/login")}>
+                <Button variant="link" className="px-0 text-xs md:text-sm" type="button" onClick={() => navigate("/login")}>
                   Login
                 </Button>
               </div>

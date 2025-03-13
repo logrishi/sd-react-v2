@@ -22,10 +22,10 @@ const BookCard: React.FC<BookCardProps> = ({ book, onBookmark, bookmarked }) => 
     <Card key={id} className="max-w-sm rounded overflow-hidden shadow-lg">
       <img className="w-full h-48 object-cover" src={imageUrl} alt={name} />
       <div className="px-6 py-4">
-        <div className="font-bold text-xl mb-2 h-12 overflow-hidden text-ellipsis line-clamp-2" title={name}>
+        <div className="font-bold text-lg md:text-xl mb-2 h-12 overflow-hidden text-ellipsis line-clamp-2" title={name}>
           {name}
         </div>
-        <p className="text-gray-600 text-base h-6 overflow-hidden text-ellipsis whitespace-nowrap" title={description}>
+        <p className="text-gray-600 text-sm md:text-base h-6 overflow-hidden text-ellipsis whitespace-nowrap" title={description}>
           {description}
         </p>
       </div>

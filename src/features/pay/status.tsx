@@ -97,8 +97,8 @@ const Status = () => {
           <>
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             <div className="space-y-2">
-              <p className="text-lg font-semibold text-foreground">Processing Payment</p>
-              <p className="text-sm text-muted-foreground">Please don't close this window or navigate away.</p>
+              <p className="text-base md:text-lg font-semibold text-foreground">Processing Payment</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Please don't close this window or navigate away.</p>
             </div>
           </>
         )}
@@ -107,8 +107,8 @@ const Status = () => {
           <>
             <CheckCircle2 className="h-16 w-16 text-success animate-in fade-in" />
             <div className="space-y-2">
-              <p className="text-lg font-semibold text-foreground">Payment Successful!</p>
-              <p className="text-sm text-muted-foreground">Redirecting you to home page...</p>
+              <p className="text-base md:text-lg font-semibold text-foreground">Payment Successful!</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Redirecting you to home page...</p>
             </div>
           </>
         )}
@@ -117,8 +117,8 @@ const Status = () => {
           <>
             <XCircle className="h-16 w-16 text-destructive animate-in fade-in" />
             <div className="space-y-2">
-              <p className="text-lg font-semibold text-foreground">Payment Failed</p>
-              <p className="text-sm text-muted-foreground">Redirecting you to home page...</p>
+              <p className="text-base md:text-lg font-semibold text-foreground">Payment Failed</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Redirecting you to home page...</p>
             </div>
           </>
         )}

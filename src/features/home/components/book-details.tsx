@@ -124,7 +124,7 @@ const BookDetails: FC = () => {
         <div className="relative">
           <div className="space-y-4 text-center">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{book.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">{book.name}</h1>
               <div className="flex items-center justify-center gap-2 mt-1">
                 {book.category ? (
                   <Badge variant="secondary" className="bg-foreground  text-background hover:bg-foreground/80">
@@ -143,7 +143,7 @@ const BookDetails: FC = () => {
         </div>
 
         <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-xl font-semibold text-center">Read Book</h2>
+          <h2 className="mb-4 text-lg md:text-xl font-semibold text-center">Read Book</h2>
           {(() => {
             const { canAccess, message, requiresLogin, requiresSubscription } = useAccessControl().checkAccess(
               book?.is_free
@@ -185,14 +185,14 @@ const BookDetails: FC = () => {
         </div>
 
         <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-xl font-semibold text-center">Listen to Audio Book</h2>
+          <h2 className="mb-4 text-lg md:text-xl font-semibold text-center">Listen to Audio Book</h2>
           {(() => {
             if (!book.audio) {
               return (
                 <div className="space-y-4 py-8 text-center">
                   <div className="text-4xl">🎧</div>
-                  <p className="text-gray-600">Audio version coming soon!</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm md:text-base text-gray-600">Audio version coming soon!</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     We're working on creating an immersive audio experience for this book.
                   </p>
                 </div>

@@ -164,8 +164,8 @@ const PasswordReset: FC = () => {
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Reset Password</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl md:text-2xl">Reset Password</CardTitle>
+            <CardDescription className="text-xs md:text-sm">
               {!otpSent
                 ? "Enter your email to reset your password"
                 : !otpVerified
@@ -174,10 +174,10 @@ const PasswordReset: FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {error && <div className="text-sm text-destructive mb-4">{error}</div>}
+            {error && <div className="text-xs md:text-sm text-destructive mb-4">{error}</div>}
             {success && (
               <Alert className="mb-4">
-                <AlertDescription>Password reset successful. Logging you in...</AlertDescription>
+                <AlertDescription className="text-xs md:text-sm">Password reset successful. Logging you in...</AlertDescription>
               </Alert>
             )}
 
@@ -193,7 +193,7 @@ const PasswordReset: FC = () => {
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-12"
+                    className="pl-12 placeholder:text-xs md:placeholder:text-sm"
                     disabled={loading}
                     required
                   />
@@ -296,7 +296,7 @@ const PasswordReset: FC = () => {
                     placeholder="New Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-12 pr-10"
+                    className="pl-12 pr-10 placeholder:text-xs md:placeholder:text-sm"
                     disabled={loading}
                     required
                   />
@@ -324,7 +324,7 @@ const PasswordReset: FC = () => {
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-12 pr-10"
+                    className="pl-12 pr-10 placeholder:text-xs md:placeholder:text-sm"
                     disabled={loading}
                     required
                   />

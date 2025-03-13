@@ -103,12 +103,12 @@ const Login: FC = () => {
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>Enter your email and password to login</CardDescription>
+            <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
+            <CardDescription className="text-xs md:text-sm">Enter your email and password to login</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && <div className="text-sm text-destructive">{error}</div>}
+              {error && <div className="text-xs md:text-sm text-destructive">{error}</div>}
 
               <div className="relative">
                 <div className="absolute left-0 top-0 flex h-full w-10 items-center justify-center rounded-l-md bg-muted">
@@ -121,7 +121,7 @@ const Login: FC = () => {
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-12"
+                  className="pl-12 placeholder:text-xs md:placeholder:text-sm"
                   disabled={loading}
                   required
                 />
@@ -138,7 +138,7 @@ const Login: FC = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 pr-10"
+                  className="pl-12 pr-10 placeholder:text-xs md:placeholder:text-sm"
                   disabled={loading}
                   required
                 />
@@ -162,14 +162,14 @@ const Login: FC = () => {
               </Button>
 
               <div className="text-center">
-                <Button variant="link" className="text-sm" type="button" onClick={() => navigate("/password-reset")}>
+                <Button variant="link" className="text-xs md:text-sm" type="button" onClick={() => navigate("/password-reset")}>
                   Forgot password?
                 </Button>
               </div>
 
-              <div className="text-center text-sm">
+              <div className="text-center text-xs md:text-sm">
                 Don't have an account?{" "}
-                <Button variant="link" className="px-0" type="button" onClick={() => navigate("/signup")}>
+                <Button variant="link" className="px-0 text-xs md:text-sm" type="button" onClick={() => navigate("/signup")}>
                   Sign up
                 </Button>
               </div>

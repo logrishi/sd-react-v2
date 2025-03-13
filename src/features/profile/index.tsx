@@ -193,8 +193,8 @@ const Profile: FC = () => {
     <div className="container max-w-4xl py-6 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
-          <p className="text-muted-foreground">Manage your account settings and preferences</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Profile Settings</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Manage your account settings and preferences</p>
         </div>
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -350,19 +350,20 @@ const Profile: FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Subscription</CardTitle>
-              <CardDescription>Your current subscription status and details</CardDescription>
-            </div>
-            <Badge
-              variant={isSubscribed ? (!isSubscriptionExpired ? "success" : "destructive") : "warning"}
-              className="text-xs font-medium flex items-center gap-1"
-            >
-              {isSubscribed ? (
-                !isSubscriptionExpired ? (
+      {/* Only show subscription section for users who have or had a subscription */}
+      {(isSubscribed || isSubscriptionExpired) && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Subscription</CardTitle>
+                <CardDescription>Your current subscription status and details</CardDescription>
+              </div>
+              <Badge
+                variant={!isSubscriptionExpired ? "success" : "destructive"}
+                className="text-xs font-medium flex items-center gap-1"
+              >
+                {!isSubscriptionExpired ? (
                   <>
                     <Check className="h-3 w-3" />
                     Active
@@ -372,39 +373,34 @@ const Profile: FC = () => {
                     <X className="h-3 w-3" />
                     Expired
                   </>
-                )
-              ) : (
-                <>
-                  <Clock className="h-3 w-3" />
-                  Not Subscribed
-                </>
+                )}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {expiryDate && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {isSubscriptionExpired ? "Expired" : "Expires"} {dayjs(expiryDate).fromNow()}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Expiry Date: {dayjs(expiryDate).format("MMM D, YYYY")}
+                  </div>
+                </div>
               )}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {expiryDate && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    {isSubscriptionExpired ? "Expired" : "Expires"} {dayjs(expiryDate).fromNow()}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Expiry Date: {dayjs(expiryDate).format("MMM D, YYYY")}
-                </div>
-              </div>
-            )}
-            {(!isSubscribed || isSubscriptionExpired) && (
-              <Button variant="outline" className="w-full" onClick={() => navigate("/subscribe")}>
-                Subscribe Now
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              {isSubscriptionExpired && (
+                <Button variant="outline" className="w-full" onClick={() => navigate("/subscribe")}>
+                  Renew Subscription
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

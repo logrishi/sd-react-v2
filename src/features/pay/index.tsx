@@ -93,7 +93,7 @@ const Pay = () => {
       <Alert className="mb-4 border-primary flex flex-col md:flex-row md:justify-between md:items-center gap-3">
         <div className="flex items-start md:items-center">
           <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-primary mr-2 flex-shrink-0 mt-0.5 md:mt-0" />
-          <AlertDescription className="text-foreground">{alertMessage}</AlertDescription>
+          <AlertDescription className="text-xs md:text-sm text-foreground">{alertMessage}</AlertDescription>
         </div>
         <Button
           size="sm"
@@ -111,10 +111,10 @@ const Pay = () => {
           {loading ? (
             <>
               <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
-              Processing...
+              <span className="text-xs md:text-sm">Processing...</span>
             </>
           ) : (
-            "Subscribe Now"
+            <span className="text-xs md:text-sm">Subscribe Now</span>
           )}
         </Button>
       </Alert>
