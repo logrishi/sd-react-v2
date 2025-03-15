@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, Outlet } from "@/lib/vendors";
 import Layout from "@/components/layout";
 import { routes, type RouteConfig } from "@/routes";
 import Loading from "@/components/common/loading";
+import ScrollRestoration from "@/components/common/scroll-restoration";
 import { store } from "@/services/store";
 // import RootLayout from "@/components/layout/root-layout";
 
@@ -43,8 +44,10 @@ const createRouter = (routes: RouteConfig[]) => {
   return createBrowserRouter([
     {
       path: "/",
-      // element: createElement(RootLayout, null, createElement(Outlet)),
-      element: createElement(Outlet),
+      element: createElement("div", null, [
+        createElement(ScrollRestoration),
+        createElement(Outlet),
+      ]),
       children: routes.map(({ path, component, auth: requiresAuth, adminOnly, isLazy, layoutProps }) => {
         const LoadedComponent = isLazy ? withLazyLoading(component) : (component() as unknown as FC);
         const AuthComponent = requiresAuth ? withProtection(LoadedComponent, adminOnly) : LoadedComponent;

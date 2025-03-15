@@ -1,3 +1,5 @@
+import { type AxiosRequestConfig } from "@/lib/vendors";
+
 // Cache interface
 interface CacheEntry<T> {
   data: T;
@@ -9,9 +11,23 @@ interface CacheEntry<T> {
 const DEFAULT_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const cacheStore = new Map<string, CacheEntry<any>>();
 
+// Cache options interface
+export interface CacheOptions {
+  duration?: number;
+  enabled?: boolean;
+  key?: string;
+}
+
 // Cache helper functions
-export function getCacheKey(method: string, endpoint: string, options: unknown): string {
-  return `${method}:${endpoint}:${JSON.stringify(options)}`;
+export function getCacheKey(config: AxiosRequestConfig): string {
+  const { method, url, params, data } = config;
+  const key = {
+    method: method?.toLowerCase(),
+    url,
+    params,
+    data: method?.toLowerCase() === 'get' ? data : undefined,
+  };
+  return JSON.stringify(key);
 }
 
 export function setCache<T>(key: string, data: T, duration: number = DEFAULT_CACHE_DURATION): void {
@@ -46,4 +62,31 @@ export function clearCache(pattern?: string): void {
   } else {
     cacheStore.clear();
   }
+}
+
+// Cache wrapper for API requests
+export async function withCache<T>(
+  config: AxiosRequestConfig,
+  makeRequest: () => Promise<T>,
+  options: CacheOptions = {}
+): Promise<T> {
+  const { duration = DEFAULT_CACHE_DURATION, enabled = true } = options;
+  
+  // Only cache GET requests
+  if (!enabled || config.method?.toLowerCase() !== 'get') {
+    return makeRequest();
+  }
+
+  const cacheKey = options.key || getCacheKey(config);
+  const cachedData = getCache<T>(cacheKey);
+
+  if (cachedData !== null) {
+    console.debug('Cache hit:', cacheKey);
+    return cachedData;
+  }
+
+  console.debug('Cache miss:', cacheKey);
+  const response = await makeRequest();
+  setCache(cacheKey, response, duration);
+  return response;
 }

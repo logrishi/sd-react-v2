@@ -33,6 +33,8 @@ interface SQLBody {
   params: Array<{ [key: string]: string | number }>;
 }
 
+import { type CacheOptions } from "./cache";
+
 interface RequestOptions {
   [key: string]: any;
   loading?: boolean;
@@ -52,6 +54,7 @@ interface RequestOptions {
   retries?: number;
   cancelToken?: CancelTokenSource;
   timeout?: number;
+  cacheOptions?: CacheOptions;
 }
 
 // Create axios instance with default config
@@ -258,9 +261,11 @@ async function buildRequestConfig(
   };
 }
 
+import { withCache } from "./cache";
+
 // Main request handler with error handling and loading state
 async function makeRequest<T = any>(method: HttpMethod, endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { loading = true } = options;
+  const { loading = true, cacheOptions } = options;
 
   try {
     if (loading) {
@@ -268,9 +273,14 @@ async function makeRequest<T = any>(method: HttpMethod, endpoint: string, option
     }
 
     const config = await buildRequestConfig(method, endpoint, options);
-    const response: AxiosResponse = await axiosInstance(config);
+    
+    // Use cache wrapper for the actual request
+    const makeAxiosRequest = async () => {
+      const response: AxiosResponse = await axiosInstance(config);
+      return response.data;
+    };
 
-    return response.data; // Return the raw response data
+    return await withCache<T>(config, makeAxiosRequest, cacheOptions);
   } catch (error) {
     if (axios.isCancel(error)) {
       console.log("Request canceled:", error.message);
