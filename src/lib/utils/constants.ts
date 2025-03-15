@@ -5,3 +5,4 @@ export const BOTTOM_CONTENT_PADDING = 80; // Padding to ensure content doesn't g
 export const APP_NAME = "Saraighat Digital";
 export const WHATSAPP_NUMBER = "+919954066643";
 export const EMAIL = "dr.sarmah.dilip@gmail.com";
+export const APP_VERSION = "8.0.0";

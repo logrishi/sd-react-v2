@@ -2,11 +2,11 @@ import { useEffect, useState, type FC } from "@/lib/vendors";
 import { store } from "@/services/store";
 import { getBooks } from "@/services/backend/actions";
 import { Card, CardContent } from "@/components/common/ui/card";
-import { Button } from "@/components/common/ui/button";
-import { Badge } from "@/components/common/ui/badge";
 import { Bookmark as BookmarkIcon } from "@/assets/icons";
+import BookCard from "../home/components/book-card";
+import AudioBookCard from "../home/components/audio-book-card";
 import { useNavigate } from "react-router-dom";
-import { getEnvVar } from "@/lib/utils/env-vars";
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
 
 interface Book {
   id: number;
@@ -14,6 +14,7 @@ interface Book {
   description: string;
   category: string;
   image: string;
+  audio?: string;
   is_free: boolean;
 }
 
@@ -22,6 +23,7 @@ const Bookmark: FC = () => {
   const [bookmarkedBooks, setBookmarkedBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { checkAccess } = useAccessControl();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -66,54 +68,57 @@ const Bookmark: FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {bookmarkedBooks.map((book) => (
-                  <Card
-                    key={book.id}
-                    className="group overflow-hidden cursor-pointer"
-                    onClick={() => navigate(`/book/${book.id}`)}
-                  >
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <img
-                        src={`${getEnvVar("VITE_IMAGE_URL")}/${book.image}`}
-                        alt={book.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
-                      />
-                      {book.is_free && (
-                        <div className="absolute top-4 left-4">
-                          <Badge variant="secondary" className="bg-success/80 text-white hover:bg-success/20">
-                            Free
-                          </Badge>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                          {book.category ? (
-                            <Badge variant="secondary" className="bg-background/80 hover:bg-background/80">
-                              {book.category}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 bg-background/80 hover:bg-background/80 text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveBookmark(book.id);
-                          }}
-                        >
-                          <BookmarkIcon className="h-4 w-4" fill="currentColor" />
-                        </Button>
-                      </div>
+              <div className="space-y-8">
+                {/* Audio Stories */}
+                {bookmarkedBooks.filter((book) => book.audio).length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-semibold tracking-tight">Audio Stories</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {bookmarkedBooks
+                        .filter((book) => book.audio)
+                        .map((book) => {
+                          const { canAccess } = checkAccess(book.is_free);
+                          return (
+                            <AudioBookCard
+                              key={book.id}
+                              id={book.id}
+                              name={book.name}
+                              audio={book.audio || ""}
+                              isFree={book.is_free}
+                              canPlay={canAccess}
+                              bookmarkedBooks={bookmarkedIds}
+                              onBookmarkToggle={handleRemoveBookmark}
+                            />
+                          );
+                        })}
                     </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold leading-none tracking-tight line-clamp-2">{book.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{book.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                  </div>
+                )}
+
+                {/* Books */}
+                {bookmarkedBooks.filter((book) => !book.audio).length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-semibold tracking-tight">E-Books (Books/Magazines)</h2>
+                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {bookmarkedBooks
+                        .filter((book) => !book.audio)
+                        .map((book) => (
+                          <BookCard
+                            key={book.id}
+                            id={book.id}
+                            name={book.name}
+                            description={book.description}
+                            category={book.category}
+                            image={book.image}
+                            isFree={book.is_free}
+                            showCategory={true}
+                            bookmarkedBooks={bookmarkedIds}
+                            onBookmarkToggle={handleRemoveBookmark}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                )}
                 {bookmarkedBooks.length === 0 && (
                   <Card className="col-span-full p-6 text-center">
                     <div className="flex flex-col items-center justify-center space-y-4">

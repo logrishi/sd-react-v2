@@ -87,8 +87,11 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ audioUrl, title, miniPlayer = false
 
   if (miniPlayer) {
     return (
-      <div className="inline-block">
+      <div className="flex items-center gap-3">
         <audio ref={audioRef} src={audioUrl} />
+        <div className="text-sm text-muted-foreground">
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </div>
         <Button 
           onClick={handlePlayPause}
           type="button" // Explicitly set type to button to prevent form submission

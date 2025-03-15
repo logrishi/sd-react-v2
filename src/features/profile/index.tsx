@@ -23,6 +23,8 @@ import {
   MessageCircle,
   MessageCircleQuestion,
 } from "@/assets/icons";
+import Pay from "@/features/pay";
+import AccessMessage from "@/components/common/access-message";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/common/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import {
@@ -41,7 +43,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { handleLogout, updateUser, uploadMedia } from "@/services/backend/actions";
-import { EMAIL, WHATSAPP_NUMBER } from "@/lib/utils/constants";
+import { APP_VERSION, EMAIL, WHATSAPP_NUMBER } from "@/lib/utils/constants";
 
 dayjs.extend(relativeTime);
 
@@ -181,6 +183,10 @@ const Profile: FC = () => {
           </div>
         </div>
 
+        <Card className="p-6">
+          <AccessMessage isLoggedIn={false} isSubscribed={false} isSubscriptionExpired={false} />
+        </Card>
+
         {/* Personal Information - Locked */}
         <Card className="relative">
           <CardHeader className="space-y-2">
@@ -190,11 +196,6 @@ const Profile: FC = () => {
             </div>
             <CardDescription>Login to access and manage your personal details</CardDescription>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <Button onClick={() => navigate("/login")} className="gap-2">
-              <Lock className="h-4 w-4" /> Login to Access
-            </Button>
-          </CardContent>
         </Card>
 
         {/* Subscription Status - Locked */}
@@ -206,11 +207,6 @@ const Profile: FC = () => {
             </div>
             <CardDescription>Login to view your subscription details</CardDescription>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <Button onClick={() => navigate("/login")} className="gap-2">
-              <Lock className="h-4 w-4" /> Login to Access
-            </Button>
-          </CardContent>
         </Card>
 
         <Card>
@@ -461,11 +457,7 @@ const Profile: FC = () => {
                   </div>
                 </div>
               )}
-              {isSubscriptionExpired && (
-                <Button variant="outline" className="w-full" onClick={() => navigate("/subscribe")}>
-                  Renew Subscription
-                </Button>
-              )}
+              {isSubscriptionExpired ? <Pay /> : null}
             </div>
           </CardContent>
         </Card>
@@ -512,7 +504,7 @@ const Profile: FC = () => {
           </div>
         </CardContent>
       </Card>
-      <p className="text-xs text-center text-muted-foreground">VERSION: {getEnvVar("VITE_APP_VERSION")}</p>
+      <p className="text-xs text-center text-muted-foreground">VERSION: {APP_VERSION}</p>
     </div>
   );
 };

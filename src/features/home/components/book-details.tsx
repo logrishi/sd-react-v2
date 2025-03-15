@@ -9,10 +9,10 @@ import { getBook } from "@/services/backend/actions";
 import { Image } from "@/components/common/image";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import BookSkeleton from "@/features/home/components/book-details-skeleton";
-import Pay from "@/features/pay";
-import { data, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PdfViewer from "@/components/pdf-viewer";
 import { sendToNative } from "@/lib/utils/utils";
+import AccessMessage from "@/components/common/access-message";
 
 interface BookDetails {
   id: number;
@@ -104,7 +104,7 @@ const BookDetails: FC = () => {
           />
           {book?.is_free ? (
             <div className="absolute top-2 left-4 z-10">
-              <Badge variant="secondary" className="bg-success/80 text-white hover:bg-success/20">
+              <Badge variant="secondary" className="bg-success text-white hover:bg-success/20">
                 Free
               </Badge>
             </div>
@@ -143,21 +143,18 @@ const BookDetails: FC = () => {
         </div>
 
         {(() => {
-          const { canAccess, message, requiresLogin, requiresSubscription } = useAccessControl().checkAccess(
-            book?.is_free
-          );
+          const { canAccess } = useAccessControl().checkAccess(book?.is_free);
+          const { isLoggedIn, isSubscribed, isSubscriptionExpired } = store.auth.get();
 
           if (!canAccess) {
             return (
-              <div className="rounded-lg border p-6 text-center space-y-4">
-                <p className="text-muted-foreground">{message}</p>
-                {requiresLogin ? (
-                  <Button className="w-full" size="lg" onClick={() => navigate("/login")}>
-                    Login
-                  </Button>
-                ) : requiresSubscription ? (
-                  <Pay />
-                ) : null}
+              <div className="rounded-lg border p-6">
+                <AccessMessage
+                  isLoggedIn={isLoggedIn}
+                  isSubscribed={isSubscribed}
+                  isSubscriptionExpired={isSubscriptionExpired}
+                  showFreeOnly={false}
+                />
               </div>
             );
           }

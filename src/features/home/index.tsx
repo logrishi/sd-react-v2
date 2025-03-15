@@ -1,20 +1,22 @@
 import { type FC } from "@/lib/vendors";
 import BookCardSkeleton from "./components/book-card-skeleton";
+import AudioBookCard from "./components/audio-book-card";
+import BookCard from "./components/book-card";
 import { Button } from "@/components/common/ui/button";
-import { Card, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/common/ui/card";
+import { Card, CardContent } from "@/components/common/ui/card";
 import { Switch } from "@/components/common/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
-import { BookmarkIcon, BookOpen, Headphones, IndianRupee } from "@/assets/icons";
+import { BookOpen, Headphones, IndianRupee } from "@/assets/icons";
 import { store } from "@/services/store";
 import { useEffect, useState } from "react";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import { getBooks, getSettings } from "@/services/backend/actions";
 import { sanitizeText } from "@/lib/utils/text-utils";
-import { Badge } from "@/components/common/ui/badge";
-import { getEnvVar } from "@/lib/utils/env-vars";
 import { useNavigate } from "react-router-dom";
 import { homeBanner } from "@/assets/images";
+import AccessMessage from "@/components/common/access-message";
 import Pay from "@/features/pay";
+import { Badge } from "@/components/common/ui/badge";
 import NativeActions from "../native-actions";
 
 interface Book {
@@ -23,11 +25,13 @@ interface Book {
   description: string;
   category: string;
   image: string;
+  audio?: string;
   is_free: boolean;
 }
 
 const Home: FC = () => {
-  const { books, searchQuery, selectedCategory, showFreeOnly = false } = store.library();
+  const { books, searchQuery, showFreeOnly = false } = store.library();
+  const selectedCategory = store.library.get().selectedCategory;
   const [loading, setLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -107,13 +111,8 @@ const Home: FC = () => {
     store.bookmark.set({ books: updatedBookmarks });
   };
 
-  // Only filter books if there's a search query or category selected
+  // Filter books based on search, category and free status
   const displayedBooks = (books as Book[]).filter((book) => {
-    // If no search query, category is 'all', and not filtering for free books, show all books
-    if (!searchQuery && selectedCategory === "all" && !showFreeOnly) {
-      return true;
-    }
-
     // Apply free filter if enabled
     const matchesFree = !showFreeOnly || book.is_free;
 
@@ -123,9 +122,8 @@ const Home: FC = () => {
       book.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       book.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Apply category filter if a specific category is selected
-    const matchesCategory =
-      selectedCategory === "all" || book?.category?.toLowerCase() === selectedCategory?.toLowerCase();
+    // Apply category filter
+    const matchesCategory = book?.category?.toLowerCase() === selectedCategory?.toLowerCase();
 
     return matchesSearch && matchesCategory && matchesFree;
   });
@@ -138,7 +136,7 @@ const Home: FC = () => {
       <main className="flex-1 relative">
         <div className="container py-6 space-y-4">
           {/* Subscription Alert */}
-          {showAlert && <Pay />}
+          {showAlert ? <Pay /> : null}
           {/* Banner */}
           <section>
             <div className="flex items-center justify-between mb-4">
@@ -186,19 +184,20 @@ const Home: FC = () => {
                 <Switch
                   checked={showFreeOnly}
                   onCheckedChange={toggleFreeFilter}
-                  className="data-[state=checked]:bg-primary"
+                  className="data-[state=checked]:bg-success"
                 />
                 <div className="flex items-center space-x-1.5">
                   {/* <IndianRupee className={cn("h-4 w-4", showFreeOnly ? "text-muted-foreground line-through" : "text-primary")} /> */}
-                  <span className="text-sm font-medium leading-none">Free Books Only</span>
+                  <span className="text-sm font-medium leading-none">Free Only</span>
                 </div>
               </div>
             </div>
-            <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full">
+            <Tabs
+              defaultValue={selectedCategory || store.appSettings.get().categories[0]?.toLowerCase()}
+              onValueChange={handleCategoryChange}
+              className="w-full"
+            >
               <TabsList className="w-full justify-start mb-4 bg-transparent">
-                <TabsTrigger value="all" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-                  All
-                </TabsTrigger>
                 {store.appSettings.get().categories.map((category: string) => (
                   <TabsTrigger
                     key={category}
@@ -224,61 +223,59 @@ const Home: FC = () => {
                   <div className="rounded-full bg-muted p-6">
                     <BookOpen className="h-12 w-12 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold text-muted-foreground">No results found</h3>
+                  <h3 className="text-xl font-semibold text-muted-foreground">
+                    {showFreeOnly ? (
+                      <>No <span className="font-bold">Free</span> content available</>
+                    ) : (
+                      "No results found"
+                    )}
+                  </h3>
                 </div>
               </Card>
+            ) : selectedCategory.toLowerCase() === "audio stories" ? (
+              <div>
+                {!showFreeOnly ? (
+                  <Card className="p-6 mb-4">
+                    <AccessMessage
+                      isLoggedIn={isLoggedIn}
+                      isSubscribed={isSubscribed}
+                      isSubscriptionExpired={isSubscriptionExpired}
+                      showFreeOnly={showFreeOnly}
+                    />
+                  </Card>
+                ) : null}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {displayedBooks.map((book) => {
+                    const { canAccess } = checkAccess(book.is_free);
+                    return (
+                      <AudioBookCard
+                        key={book.id}
+                        id={book.id}
+                        name={book.name}
+                        audio={book.audio ? book.audio : ""}
+                        isFree={book.is_free}
+                        canPlay={canAccess}
+                        bookmarkedBooks={bookmarkedBooks}
+                        onBookmarkToggle={handleBookmark}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {displayedBooks.map((book) => (
-                  <Card
+                  <BookCard
                     key={book.id}
-                    className="group overflow-hidden cursor-pointer"
-                    onClick={() => navigate(`/book/${book.id}`)}
-                  >
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <img
-                        src={`${getEnvVar("VITE_IMAGE_URL")}/${book.image}`}
-                        alt={book.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
-                      />
-                      {book.is_free ? (
-                        <div className="absolute top-4 left-4">
-                          <Badge variant="secondary" className="bg-success/80 text-white hover:bg-success/20">
-                            Free
-                          </Badge>
-                        </div>
-                      ) : null}
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                          {book.category ? (
-                            <Badge variant="secondary" className="bg-background/80 hover:bg-background/80">
-                              {book.category}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 bg-background/80 hover:bg-background/80 ${bookmarkedBooks.includes(book.id) ? "text-primary" : ""}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBookmark(book.id);
-                          }}
-                        >
-                          <BookmarkIcon
-                            className="h-4 w-4"
-                            fill={bookmarkedBooks.includes(book.id) ? "currentColor" : "none"}
-                          />
-                        </Button>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold leading-none tracking-tight line-clamp-2">{book.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{book.description}</p>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex items-center justify-between"></CardFooter>
-                  </Card>
+                    id={book.id}
+                    name={book.name}
+                    description={book.description}
+                    category={book.category}
+                    image={book.image}
+                    isFree={book.is_free}
+                    bookmarkedBooks={bookmarkedBooks}
+                    onBookmarkToggle={handleBookmark}
+                  />
                 ))}
               </div>
             )}
