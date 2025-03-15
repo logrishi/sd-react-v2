@@ -2,17 +2,13 @@ import Api from "./api";
 import { axios } from "@/lib/vendors";
 import { compressImage } from "@/lib/utils/image-compression";
 import { formatBookData } from "@/lib/utils/text-utils";
-import { hashPassword, sendToNative } from "@/lib/utils/utils";
-import { checkSubscriptionStatus } from "@/lib/utils/session";
+import { hashPassword } from "@/lib/utils/utils";
 import { store } from "@/services/store";
 
 // Debug utility
 const debug = {
   log: (message: string, data: any) => {
     console.log(`[DEBUG] ${message}:`, data);
-    if (store.isNative.get().isNative) {
-      sendToNative({ type: "debug", message, data });
-    }
     return data;
   },
   error: (message: string, error: any) => {
@@ -34,7 +30,7 @@ const settingsApi = Api.resource("settings");
 export async function getUserDetails(id: string, options = {}) {
   try {
     const response = await userApi.getOne(id, {
-      filter: "is_deleted:0",
+      filter: "is_deleted:0", // Always enforce soft delete filter
       ...options,
     });
     return debug.log("Get User Details", response);
@@ -53,39 +49,56 @@ export async function updateUser(id: string, data: any, options = {}) {
 }
 
 // Auth Actions
-export function handleLoginSuccess(loginResponse: any) {
+export const USER_DETAILS_FIELDS =
+  "id,name,email,image,expiry_date,is_admin,is_deleted,force_logout,force_password_reset,last_login,login_device_id,device_token";
+
+export async function handleLoginSuccess(loginResponse: any, deviceId?: string, password?: string) {
   if (loginResponse.err) {
     return { success: false, error: "Login failed" };
   }
 
   const { result, session } = loginResponse;
-  const { isSubscribed, isSubscriptionExpired } = checkSubscriptionStatus(result.expiry_date);
 
+  // Get full user details after successful login
+  const userDetailsResponse = await getUserDetails(result.id, {
+    fields: USER_DETAILS_FIELDS,
+    filter: "is_deleted:0",
+  });
+  console.log("userDetailsResponse", userDetailsResponse);
+  if (!userDetailsResponse?.result?.length) {
+    return { success: false, error: "Failed to get user details" };
+  }
+
+  const userData = userDetailsResponse.result[0];
+
+  // Update device ID and last login
+  await updateUser(userData.id, {
+    ...(deviceId ? { login_device_id: deviceId } : {}),
+    last_login: new Date().toISOString(),
+  });
+
+  // Update store with full user details
   store.auth.set({
     isLoggedIn: true,
     user: {
-      id: result.id,
-      name: result.name,
-      email: result.email,
-      image: result.image,
-      password: result.password,
+      ...userData,
+      password: password || '', // Store password for session refresh
     },
     session,
-    isAdmin: result.is_admin,
-    isDeleted: result.is_deleted,
-    expiryDate: result.expiry_date,
-    isSubscribed,
-    isSubscriptionExpired,
-    updatePassword: result.update_password,
-    forcePasswordReset: result.force_password_reset,
-    forceLogout: result.force_logout,
-    lastLogin: result.last_login,
+    isAdmin: userData.is_admin,
+    isDeleted: userData.is_deleted,
+    expiryDate: userData.expiry_date,
+    updatePassword: userData.update_password,
+    forcePasswordReset: userData.force_password_reset,
+    forceLogout: userData.force_logout,
+    lastLogin: userData.last_login,
   });
 
   return { success: true };
 }
 
 export function handleLogout() {
+  // Reset all auth-related state
   store.auth.set({
     isLoggedIn: false,
     user: { id: "", name: "", email: "", image: "", password: "" },
@@ -106,30 +119,38 @@ export function handleLogout() {
 
 export async function login(
   credentials: { email: string; password: string },
-  options = {
-    fields:
-      "id, name, email, image, password, expiry_date, is_admin, is_deleted, update_password, force_logout, force_password_reset,last_login",
+  options: ApiOptions = {
+    fields: "id,email,password",
   }
 ) {
   try {
     const response = await authApi.check(credentials, options);
-    if (!response.err) {
-      // Update last_login timestamp
-      await userApi.update(response.result.id, {
-        last_login: new Date().toISOString(),
-      });
-    }
-
     return debug.log("Login", response);
   } catch (error) {
     return debug.error("Login", error);
   }
 }
 
-export async function checkUserExists(email: string, options = {}) {
+interface ApiOptions {
+  fields?: string;
+  filter?: string;
+  search?: string;
+  sort?: string;
+  // Update-related fields
+  force_password_reset?: number;
+  update_password?: number;
+  force_logout?: number;
+}
+
+export async function checkUserExists(
+  email: string,
+  options: ApiOptions = {
+    fields: "id,email,password",
+  }
+) {
   try {
     const response = await userApi.getAll({
-      filter: `is_deleted:0`,
+      filter: "is_deleted:0",
       search: `email:${email}`,
       ...options,
     });
@@ -169,8 +190,9 @@ export async function createUser(
     const response = await userApi.create({
       ...userData,
       password: hashedPassword,
-      force_logout: false,
-      force_password_reset: false,
+      force_logout: 0,
+      force_password_reset: 0,
+      update_password: 0,
       is_deleted: 0,
     });
 
@@ -181,9 +203,9 @@ export async function createUser(
         password: userData.password, // Use original password for login
       });
 
-      const { success } = handleLoginSuccess(loginResponse);
-      if (!success) {
-        return { err: true, result: "Login failed after signup" };
+      const result = await handleLoginSuccess(loginResponse);
+      if (!result.success) {
+        return { err: true, result: result.error || "Login failed after signup" };
       }
       return loginResponse;
     }
@@ -194,9 +216,16 @@ export async function createUser(
   }
 }
 
-export const resetPassword = async (userId: number, hashedPassword: string, options = {}) => {
+export const resetPassword = async (userId: number, hashedPassword: string, options: ApiOptions & { update_password?: number; force_password_reset?: number; force_logout?: number } = {}) => {
   try {
-    const response = await userApi.update(userId, { password: hashedPassword, ...options });
+    // Extract API options from the options object
+    const { fields, filter, ...updateOptions } = options;
+    
+    const response = await userApi.update(
+      userId,
+      { password: hashedPassword, ...updateOptions },
+      { fields, filter }
+    );
     return debug.log("Reset Password", response);
   } catch (error) {
     return debug.error("Reset Password", error);
@@ -207,19 +236,34 @@ export const resetPassword = async (userId: number, hashedPassword: string, opti
 export async function updateForceFlags(
   userId: string,
   flags: { force_password_reset?: number; force_logout?: number },
-  options = {}
+  options: ApiOptions = {}
 ) {
   try {
-    const response = await userApi.update(userId, flags, options);
+    // Extract API options and ensure proper session management
+    const { fields, filter, ...updateOptions } = options;
+    
+    const response = await userApi.update(
+      userId,
+      flags,
+      { 
+        fields: fields || USER_DETAILS_FIELDS,
+        filter: filter || "is_deleted:0",
+        ...updateOptions
+      }
+    );
     return debug.log("Update Force Flags", response);
   } catch (error) {
     return debug.error("Update Force Flags", error);
   }
 }
 
-export async function checkForceFlags(userId: string, options = {}) {
+export async function checkForceFlags(userId: string, options: ApiOptions = {}) {
   try {
-    const response = await userApi.getOne(userId, options);
+    const response = await userApi.getOne(userId, {
+      fields: options.fields || USER_DETAILS_FIELDS,
+      filter: options.filter || "is_deleted:0",
+      ...options
+    });
     return debug.log("Check Force Flags", response);
   } catch (error) {
     return debug.error("Check Force Flags", error);
@@ -257,7 +301,7 @@ export async function getBooks(options = { sort: "-created_at", filter: "is_dele
   }
 }
 
-export async function getBook(id: string, options = {}) {
+export async function getBook(id: string, options = { filter: "is_deleted:0" }) {
   try {
     const response: any = await bookApi.getOne(id, options);
     if (!response.err && Array.isArray(response.result)) {

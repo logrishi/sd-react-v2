@@ -60,6 +60,8 @@ import {
   FileText,
   LucideIcon,
   AlertTriangle,
+  MessageCircle,
+  MessageCircleQuestion,
 } from "lucide-react";
 
 // Export all icons
@@ -123,5 +125,7 @@ export {
   ZoomOut,
   RotateCw,
   AlertTriangle,
+  MessageCircle,
+  MessageCircleQuestion,
   type LucideIcon,
 };

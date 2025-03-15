@@ -124,7 +124,8 @@ const Home: FC = () => {
       book.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     // Apply category filter if a specific category is selected
-    const matchesCategory = selectedCategory === "all" || book.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "all" || book?.category?.toLowerCase() === selectedCategory?.toLowerCase();
 
     return matchesSearch && matchesCategory && matchesFree;
   });

@@ -14,9 +14,11 @@ export const useAccessControl = () => {
     if (!isLoggedIn) {
       return {
         canAccess: false,
-        message: isFree ? "Login to access this free content" : "Login to access our collection",
+        message: isFree
+          ? "Login to access this free content"
+          : "Login to access our collection of e-books and audio books",
         requiresLogin: true,
-        requiresSubscription: false
+        requiresSubscription: false,
       };
     }
 
@@ -25,7 +27,7 @@ export const useAccessControl = () => {
         canAccess: false,
         message: "Your account has been deleted. Please contact support.",
         requiresLogin: false,
-        requiresSubscription: false
+        requiresSubscription: false,
       };
     }
 
@@ -35,7 +37,7 @@ export const useAccessControl = () => {
         canAccess: true,
         message: "",
         requiresLogin: false,
-        requiresSubscription: false
+        requiresSubscription: false,
       };
     }
 
@@ -45,7 +47,7 @@ export const useAccessControl = () => {
         canAccess: false,
         message: "Login to access this free content",
         requiresLogin: true,
-        requiresSubscription: false
+        requiresSubscription: false,
       };
     }
 
@@ -54,8 +56,8 @@ export const useAccessControl = () => {
       return {
         canAccess: false,
         message: "Subscribe today to gain access to e-books and audio books",
-        requiresLogin: false,  // User is already logged in at this point
-        requiresSubscription: true
+        requiresLogin: false, // User is already logged in at this point
+        requiresSubscription: true,
       };
     }
 
@@ -63,8 +65,8 @@ export const useAccessControl = () => {
       return {
         canAccess: false,
         message: "Your subscription has expired! Renew today to continue access to e-books and audio books",
-        requiresLogin: false,  // User is already logged in at this point
-        requiresSubscription: true
+        requiresLogin: false, // User is already logged in at this point
+        requiresSubscription: true,
       };
     }
 
@@ -72,7 +74,7 @@ export const useAccessControl = () => {
       canAccess: true,
       message: "",
       requiresLogin: false,
-      requiresSubscription: false
+      requiresSubscription: false,
     };
   };
 

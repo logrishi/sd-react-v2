@@ -20,6 +20,8 @@ import {
   Clock,
   Check,
   X,
+  MessageCircle,
+  MessageCircleQuestion,
 } from "@/assets/icons";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/common/ui/avatar";
 import { useNavigate } from "react-router-dom";
@@ -39,6 +41,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { handleLogout, updateUser, uploadMedia } from "@/services/backend/actions";
+import { EMAIL, WHATSAPP_NUMBER } from "@/lib/utils/constants";
 
 dayjs.extend(relativeTime);
 
@@ -59,15 +62,10 @@ const Profile: FC = () => {
   const [imageLoading, setImageLoading] = useState(false);
 
   const handleContactSupport = () => {
-    window.location.href = "mailto:dr.sarmah.dilip@gmail.com";
+    window.location.href = `mailto:${EMAIL}`;
   };
 
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!isLoggedIn) {
-      navigate("/login");
-    }
-  }, [isLoggedIn, navigate]);
+  // No longer redirecting when not logged in
 
   // Cleanup avatar preview URL on unmount
   useEffect(() => {
@@ -175,14 +173,85 @@ const Profile: FC = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="container py-6">
+      <div className="container max-w-4xl py-6 space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Profile Settings</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Manage your account settings and preferences</p>
+          </div>
+        </div>
+
+        {/* Personal Information - Locked */}
+        <Card className="relative">
+          <CardHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              <CardTitle>Personal Information</CardTitle>
+              <Lock className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <CardDescription>Login to access and manage your personal details</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <Button onClick={() => navigate("/login")} className="gap-2">
+              <Lock className="h-4 w-4" /> Login to Access
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Subscription Status - Locked */}
+        <Card className="relative">
+          <CardHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              <CardTitle>Subscription Status</CardTitle>
+              <Lock className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <CardDescription>Login to view your subscription details</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <Button onClick={() => navigate("/login")} className="gap-2">
+              <Lock className="h-4 w-4" /> Login to Access
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Please log in to view your profile</CardDescription>
+            <CardTitle>Privacy Policy</CardTitle>
+            <CardDescription>Read our privacy policy to understand how we handle your data</CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center">
-            <Button onClick={() => navigate("/login")}>Go to Login</Button>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <Button variant="link" className="px-0" asChild onClick={() => navigate("/privacy")}>
+                <p className="text-sm">
+                  View Privacy Policy <ExternalLink className="ml-1 h-4 w-4" />
+                </p>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Support</CardTitle>
+            <CardDescription>Get help with your account or technical issues</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Need assistance? Our support team is here to help you with any questions or concerns.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => window.open("https://wa.me/" + WHATSAPP_NUMBER, "_blank")}
+                >
+                  <MessageCircleQuestion className="h-4 w-4" /> Contact on WhatsApp
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={handleContactSupport}>
+                  <Mail className="h-4 w-4" /> Email Support
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -421,20 +490,25 @@ const Profile: FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Support</CardTitle>
-          <CardDescription>Get help with your account</CardDescription>
+          <CardDescription>Get help with your account or technical issues</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <HelpCircle className="h-5 w-5" />
-            <Label>Need Help?</Label>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            If you're having trouble with your account or have questions, our support team is here to help
-          </p>
-          <div className="space-y-2">
-            <Button variant="outline" className="w-full text-primary" onClick={handleContactSupport}>
-              Contact Support
-            </Button>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Need assistance? Our support team is here to help you with any questions or concerns.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => window.open("https://wa.me/" + WHATSAPP_NUMBER, "_blank")}
+              >
+                <MessageCircleQuestion className="h-4 w-4" /> Contact on WhatsApp
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={handleContactSupport}>
+                <Mail className="h-4 w-4" /> Email Support
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

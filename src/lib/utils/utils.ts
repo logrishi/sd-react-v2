@@ -1,6 +1,7 @@
 import { bcrypt, clsx, twMerge, type ClassValue } from "@/lib/vendors";
 import { getEnvVar } from "./env-vars";
 import { store } from "@/services/store";
+import { EMAIL } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,7 +29,7 @@ export const generateOtpWithTimestamp = () => {
 
 export const sendMail = async (data: any) => {
   const params = {
-    from: "dr.sarmah.dilip@gmail.com",
+    from: EMAIL,
     to: [data?.email],
     subject: "Password Reset",
     text: `The OTP for resetting Saraighat Digital password is ${data.otp} and is valid for 5 minutes`,

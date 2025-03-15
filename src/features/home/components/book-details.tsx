@@ -1,6 +1,6 @@
 import { useEffect, useParams, useState, useMemo, type FC } from "@/lib/vendors";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
-import { Bookmark } from "@/assets/icons";
+import { Bookmark, BookOpen } from "@/assets/icons";
 import { store } from "@/services/store";
 import { Button } from "@/components/common/ui/button";
 import { Badge } from "@/components/common/ui/badge";
@@ -142,87 +142,64 @@ const BookDetails: FC = () => {
           <p>{book.description}</p>
         </div>
 
-        <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-lg md:text-xl font-semibold text-center">Read Book</h2>
-          {(() => {
-            const { canAccess, message, requiresLogin, requiresSubscription } = useAccessControl().checkAccess(
-              book?.is_free
-            );
+        {(() => {
+          const { canAccess, message, requiresLogin, requiresSubscription } = useAccessControl().checkAccess(
+            book?.is_free
+          );
 
-            if (!canAccess) {
-              if (requiresLogin) {
-                return (
-                  <div className="text-center">
-                    <p className="mb-4 text-muted-foreground">{message}</p>
-                    <Button className="w-full" size="lg" onClick={() => navigate("/login")}>
-                      Login
-                    </Button>
-                  </div>
-                );
-              }
-
-              if (requiresSubscription) {
-                return <Pay />;
-              }
-            }
-
+          if (!canAccess) {
             return (
-              <div className="text-center">
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={() => {
-                    const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
-                    setPdfSource(pdfUrl);
-                    setIsPdfVisible(true);
-                  }}
-                >
-                  Read Now
-                </Button>
+              <div className="rounded-lg border p-6 text-center space-y-4">
+                <p className="text-muted-foreground">{message}</p>
+                {requiresLogin ? (
+                  <Button className="w-full" size="lg" onClick={() => navigate("/login")}>
+                    Login
+                  </Button>
+                ) : requiresSubscription ? (
+                  <Pay />
+                ) : null}
               </div>
             );
-          })()}
-        </div>
+          }
 
-        <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-lg md:text-xl font-semibold text-center">Listen to Audio Book</h2>
-          {(() => {
-            if (!book.audio) {
-              return (
-                <div className="space-y-4 py-8 text-center">
-                  <div className="text-4xl">🎧</div>
-                  <p className="text-sm md:text-base text-gray-600">Audio version coming soon!</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    We're working on creating an immersive audio experience for this book.
-                  </p>
+          return (
+            <>
+              <div className="rounded-lg border p-6">
+                <h2 className="mb-4 text-lg md:text-xl font-semibold text-center">E-Book</h2>
+                <div className="text-center">
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => {
+                      const pdfUrl = `${getEnvVar("VITE_IMAGE_URL")}/${book.book}`;
+                      setPdfSource(pdfUrl);
+                      setIsPdfVisible(true);
+                    }}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <BookOpen className="h-5 w-5" /> Read Now
+                    </span>
+                  </Button>
                 </div>
-              );
-            }
+              </div>
 
-            const { canAccess, message, requiresLogin, requiresSubscription } = useAccessControl().checkAccess(
-              book.is_free
-            );
-
-            if (!canAccess) {
-              if (requiresLogin) {
-                return (
-                  <div className="text-center">
-                    <p className="mb-4 text-muted-foreground">{message}</p>
-                    <Button className="w-full" size="lg" onClick={() => navigate("/login")}>
-                      Login
-                    </Button>
+              <div className="rounded-lg border p-6">
+                <h2 className="mb-4 text-lg md:text-xl font-semibold text-center">Listen to Audio Book</h2>
+                {!book.audio ? (
+                  <div className="space-y-4 py-8 text-center">
+                    <div className="text-4xl">🎧</div>
+                    <p className="text-sm md:text-base text-gray-600">Audio version coming soon!</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      We're working on creating an immersive audio experience for this book.
+                    </p>
                   </div>
-                );
-              }
-
-              if (requiresSubscription) {
-                return <Pay />;
-              }
-            }
-
-            return <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/${book.audio}`} />;
-          })()}
-        </div>
+                ) : (
+                  <AudioPlayer audioUrl={`${getEnvVar("VITE_IMAGE_URL")}/${book.audio}`} />
+                )}
+              </div>
+            </>
+          );
+        })()}
       </div>
       <PdfViewer isOpen={isPdfVisible} onClose={() => setIsPdfVisible(false)} pdfUrl={pdfSource} title={book.name} />
     </div>

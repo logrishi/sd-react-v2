@@ -8,7 +8,7 @@ import { checkUserExists, login, resetPassword, handleLoginSuccess } from "@/ser
 import { Eye, EyeOff, Mail, Lock } from "@/assets/icons";
 import { useState, useEffect } from "react";
 import { withForceFlags } from "@/components/auth/with-force-flags";
-import { comparePassword, hashPassword } from "@/lib/utils/utils";
+import { comparePassword, hashPassword, sendToNative } from "@/lib/utils/utils";
 
 const Login: FC = () => {
   const navigate = useNavigate();
@@ -92,6 +92,9 @@ const Login: FC = () => {
       }
       navigate("/");
     } catch (err: any) {
+      if (store.isNative.get().isNative) {
+        sendToNative({ type: "error", message: err });
+      }
       setError("An error occurred during login");
     } finally {
       setLoading(false);
@@ -162,14 +165,24 @@ const Login: FC = () => {
               </Button>
 
               <div className="text-center">
-                <Button variant="link" className="text-xs md:text-sm" type="button" onClick={() => navigate("/password-reset")}>
+                <Button
+                  variant="link"
+                  className="text-xs md:text-sm"
+                  type="button"
+                  onClick={() => navigate("/password-reset")}
+                >
                   Forgot password?
                 </Button>
               </div>
 
               <div className="text-center text-xs md:text-sm">
                 Don't have an account?{" "}
-                <Button variant="link" className="px-0 text-xs md:text-sm" type="button" onClick={() => navigate("/signup")}>
+                <Button
+                  variant="link"
+                  className="px-0 text-xs md:text-sm"
+                  type="button"
+                  onClick={() => navigate("/signup")}
+                >
                   Sign up
                 </Button>
               </div>

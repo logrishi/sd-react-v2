@@ -1,3 +1,5 @@
+import { EMAIL } from "@/lib/utils/constants";
+
 const Privacy = () => {
   return (
     <div className="app-container">
@@ -16,13 +18,12 @@ const Privacy = () => {
         immediately after payment confirmation. - For customized digital products, delivery times will be communicated
         during the ordering process. 3. Technical Requirements: - Ensure that your device meets the specified technical
         requirements for downloading and using the digital product. 4. Contact Information: - If you encounter any
-        issues with your digital product delivery, please contact our customer support at dr.sarmah.dilip@gmail.com.
+        issues with your digital product delivery, please contact our customer support at {EMAIL}.
       </p>
       <h1 className="text-lg font-semibold pt-4">Return and Refund Policy</h1>
       <p>
         We want you to be satisfied with your digital product purchase. Here's our Return and Refund Policy: 1. Refunds
-        are not applicable for our digital products. 2. In case of transaction related issues send email at
-        dr.sarmah.dilip@gmail.com.
+        are not applicable for our digital products. 2. In case of transaction related issues send email at {EMAIL}.
       </p>
       <h1 className="text-lg font-semibold pt-4">Privacy Policy</h1>
       <p>
@@ -48,11 +49,11 @@ const Privacy = () => {
       <h1 className="text-lg font-semibold pt-4">Account Deletion</h1>
       <p>
         You have the right to request deletion of your account and associated data: 1. Process: - Submit a deletion
-        request through your account settings or by emailing dr.sarmah.dilip@gmail.com. - Account deletion will remove
-        all personal information, purchase history, and saved preferences. 2. Timeline: - Account deletion requests are
-        typically processed within 30 days. 3. Data Retention: - Some information may be retained for legal or
-        administrative purposes as required by law. 4. Purchased Content: - Access to previously purchased digital
-        content will be revoked upon account deletion.
+        request through your account settings or by emailing {EMAIL}. - Account deletion will remove all personal
+        information, purchase history, and saved preferences. 2. Timeline: - Account deletion requests are typically
+        processed within 30 days. 3. Data Retention: - Some information may be retained for legal or administrative
+        purposes as required by law. 4. Purchased Content: - Access to previously purchased digital content will be
+        revoked upon account deletion.
       </p>
     </div>
   );

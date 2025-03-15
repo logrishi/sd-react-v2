@@ -1,6 +1,6 @@
 import { RouterProvider } from "@/lib/vendors";
-import { router } from "./services/router";
-import { ThemeProvider } from "./components/theme-provider";
+import { router } from "@/services/router";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 
 function App() {
   return (

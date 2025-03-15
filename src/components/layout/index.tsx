@@ -94,7 +94,6 @@ export const Layout: FC<LayoutProps> = ({
     </div>
   );
 
-  // Return the content directly without wrapping in BannerProvider
   return content;
 };
 

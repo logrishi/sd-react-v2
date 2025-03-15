@@ -125,7 +125,6 @@ export const routes: RouteConfig[] = [
   {
     path: "/profile",
     component: () => import("@/features/profile"),
-    auth: true,
     isLazy: true,
     layoutProps: {
       headerTitle: "My Profile",

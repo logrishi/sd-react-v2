@@ -4,6 +4,7 @@ import Layout from "@/components/layout";
 import { routes, type RouteConfig } from "@/routes";
 import Loading from "@/components/common/loading";
 import { store } from "@/services/store";
+// import RootLayout from "@/components/layout/root-layout";
 
 // Higher-order component for protected routes
 const withProtection = (Component: FC, requiresAdmin: boolean = false): FC => {
@@ -11,17 +12,17 @@ const withProtection = (Component: FC, requiresAdmin: boolean = false): FC => {
     const auth = store.auth.get();
     const isAuthenticated = auth.isLoggedIn;
     const isAdmin = auth.isAdmin;
-    
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       return createElement(Navigate, { to: "/login", replace: true });
     }
-    
+
     // If route requires admin access, check if user is admin
     if (requiresAdmin && !isAdmin) {
       return createElement(Navigate, { to: "/", replace: true });
     }
-    
+
     // User is authenticated and has required permissions
     return createElement(Component, props);
   };
@@ -42,6 +43,7 @@ const createRouter = (routes: RouteConfig[]) => {
   return createBrowserRouter([
     {
       path: "/",
+      // element: createElement(RootLayout, null, createElement(Outlet)),
       element: createElement(Outlet),
       children: routes.map(({ path, component, auth: requiresAuth, adminOnly, isLazy, layoutProps }) => {
         const LoadedComponent = isLazy ? withLazyLoading(component) : (component() as unknown as FC);

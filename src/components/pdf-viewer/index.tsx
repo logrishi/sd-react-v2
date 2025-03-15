@@ -6,7 +6,7 @@ import { X, Loader2, ZoomIn, ZoomOut } from "@/assets/icons";
 import { Button } from "@/components/common/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/common/ui/dialog";
 import { Document, Page, pdfjs } from "react-pdf";
-import { useResizeObserver } from "@/lib/hooks/use-resize-observer";
+import { useResizeObserver } from "@/lib/hooks/useResizeObserver";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
@@ -23,21 +23,21 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
   const [scale, setScale] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [touchDistance, setTouchDistance] = useState<number | null>(null);
-  
+
   // Calculate distance between two touch points
   const getTouchDistance = (touches: TouchList) => {
     if (touches.length < 2) return null;
-    return Math.hypot(
-      touches[0].clientX - touches[1].clientX,
-      touches[0].clientY - touches[1].clientY
-    );
+    return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
   };
 
   // Handle touch events for pinch zoom
   const handleTouchStart = (e: TouchEvent) => {
     if (e.touches.length === 2) {
       e.preventDefault();
-      setTouchDistance(getTouchDistance(e.touches));
+      const distance = getTouchDistance(e.touches);
+      if (distance) {
+        setTouchDistance(distance);
+      }
     }
   };
 
@@ -45,9 +45,9 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
     if (e.touches.length === 2 && touchDistance) {
       e.preventDefault();
       const newDistance = getTouchDistance(e.touches);
-      if (newDistance && touchDistance) {
-        const scaleDiff = (newDistance - touchDistance) * 0.01;
-        setScale(prev => Math.min(2, Math.max(0.5, prev + scaleDiff)));
+      if (newDistance) {
+        const scaleDiff = (newDistance - touchDistance) * 0.005; // Reduced sensitivity for smoother zooming
+        setScale((prev) => Math.min(3, Math.max(0.5, prev + scaleDiff))); // Increased max zoom to 300%
         setTouchDistance(newDistance);
       }
     }
@@ -81,19 +81,19 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
 
     const container = containerRef.current;
     if (container) {
-      container.addEventListener('touchstart', handleTouchStart as any, { passive: false });
-      container.addEventListener('touchmove', handleTouchMove as any, { passive: false });
-      container.addEventListener('touchend', handleTouchEnd);
+      container.addEventListener("touchstart", handleTouchStart as any, { passive: false });
+      container.addEventListener("touchmove", handleTouchMove as any, { passive: false });
+      container.addEventListener("touchend", handleTouchEnd);
     }
 
     document.addEventListener("contextmenu", handleContextMenu);
-    
+
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       if (container) {
-        container.removeEventListener('touchstart', handleTouchStart as any);
-        container.removeEventListener('touchmove', handleTouchMove as any);
-        container.removeEventListener('touchend', handleTouchEnd);
+        container.removeEventListener("touchstart", handleTouchStart as any);
+        container.removeEventListener("touchmove", handleTouchMove as any);
+        container.removeEventListener("touchend", handleTouchEnd);
       }
     };
   }, [touchDistance]);
@@ -202,8 +202,8 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setScale((prev) => Math.min(2, prev + 0.1))}
-              disabled={scale >= 2}
+              onClick={() => setScale((prev) => Math.min(3, prev + 0.1))}
+              disabled={scale >= 3}
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
@@ -211,7 +211,13 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
         </div>
         <div
           ref={containerRef}
-          className="flex-1 min-h-0 relative bg-background overflow-auto"
+          className="flex-1 min-h-0 relative bg-background overflow-auto overscroll-none"
+          style={{ 
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "thin",
+            scrollbarGutter: "stable",
+            overflowX: scale > 1 ? "scroll" : "hidden", // Force horizontal scroll when zoomed
+          }}
           onContextMenu={(e) => e.preventDefault()}
         >
           {isLoading && (
@@ -226,8 +232,19 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
               </div>
             </div>
           )}
-          <div className="min-w-full overflow-x-auto">
-            <div className="flex flex-col items-center" style={{ minHeight: "calc(100vh - 8rem)" }}>
+          <div 
+            className="min-w-full h-full relative" 
+            style={{
+              width: scale > 1 ? `${Math.max(width * 0.9, 320) * scale + 48}px` : "100%", // Add extra padding for scroll
+            }}>
+            <div 
+              className="flex flex-col items-center w-full h-full px-6" 
+              style={{ 
+                minHeight: "calc(100vh - 8rem)",
+                position: "relative",
+                left: scale > 1 ? "50%" : 0,
+                transform: scale > 1 ? "translateX(-50%)" : "none",
+              }}>
               <Document
                 file={pdfUrl}
                 onLoadSuccess={onLoadSuccess}
@@ -243,14 +260,15 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
                     style={{
                       marginBottom: index === numPages - 1 ? "calc(100vh - 12rem)" : "2rem",
                       width: `${Math.max(width * 0.9, 320) * scale}px`,
-                      margin: "0 auto"
+                      transition: "width 0.1s ease-out", // Smooth zoom transitions
+                      margin: "0 auto",
                     }}
                   >
-                    <Page 
-                      pageNumber={index + 1} 
+                    <Page
+                      pageNumber={index + 1}
                       width={Math.max(width * 0.9, 320)}
                       scale={scale}
-                      className="bg-white" 
+                      className="bg-white"
                     />
                   </div>
                 ))}
