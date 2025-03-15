@@ -170,4 +170,14 @@ export const routes: RouteConfig[] = [
       headerTitle: "Manage Books",
     },
   },
+  {
+    path: "/admin/users",
+    component: () => import("@/features/admin/users"),
+    auth: true,
+    // adminOnly: true,
+    isLazy: true,
+    layoutProps: {
+      headerTitle: "Manage Users",
+    },
+  },
 ];

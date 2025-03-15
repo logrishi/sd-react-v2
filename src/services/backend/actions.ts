@@ -31,10 +31,30 @@ const settingsApi = Api.resource("settings");
 
 // User Actions
 
+export async function getUsers(options = {}) {
+  try {
+    // const auth = store.auth.get();
+    // if (!auth?.session) throw new Error("Unauthorized");
+    const response = await userApi.getAll({
+      filter: "is_deleted:0",
+      // permissions: "{is_admin}==1",
+      // session: auth.session,
+      ...options,
+    });
+    return debug.log("Get Users", response);
+  } catch (error) {
+    return debug.error("Get Users", error);
+  }
+}
+
 export async function getUserDetails(id: string, options = {}) {
   try {
+    // const auth = store.auth.get();
+    // if (!auth?.session) throw new Error("Unauthorized");
     const response = await userApi.getOne(id, {
       filter: "is_deleted:0",
+      // permissions: auth.isAdmin ? "{role}==admin" : "{id}=={user.id}",
+      // session: auth.session,
       ...options,
     });
     return debug.log("Get User Details", response);
@@ -45,7 +65,14 @@ export async function getUserDetails(id: string, options = {}) {
 
 export async function updateUser(id: string, data: any, options = {}) {
   try {
-    const response = await userApi.update(id, data as Partial<any>, options);
+    // const auth = store.auth.get();
+    // if (!auth?.session) throw new Error("Unauthorized");
+    const response = await userApi.update(id, data as Partial<any>, {
+      // session: auth.session,
+      // permissions: auth.isAdmin ? "{role}==admin" : "{id}=={user.id}",
+      filter: "is_deleted:0",
+      ...options,
+    });
     return debug.log("Update User", response);
   } catch (error) {
     return debug.error("Update User", error);
@@ -210,7 +237,14 @@ export async function updateForceFlags(
   options = {}
 ) {
   try {
-    const response = await userApi.update(userId, flags, options);
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response = await userApi.update(userId, flags, {
+      filter: "is_deleted:0",
+      // session: auth.session,
+      // permissions: "{role}==admin",
+      ...options,
+    });
     return debug.log("Update Force Flags", response);
   } catch (error) {
     return debug.error("Update Force Flags", error);
@@ -219,7 +253,13 @@ export async function updateForceFlags(
 
 export async function checkForceFlags(userId: string, options = {}) {
   try {
-    const response = await userApi.getOne(userId, options);
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response = await userApi.getOne(userId, {
+      // session: auth.session,
+      // filter: !auth.isAdmin ? `id:${auth.user.id}` : undefined,
+      ...options,
+    });
     return debug.log("Check Force Flags", response);
   } catch (error) {
     return debug.error("Check Force Flags", error);
@@ -229,7 +269,13 @@ export async function checkForceFlags(userId: string, options = {}) {
 // Book Actions
 export async function createBook(data: any, options = {}) {
   try {
-    const response = await bookApi.create(formatBookData(data), options);
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response = await bookApi.create(formatBookData(data), {
+      // session: auth.session,
+      // permissions: "{role}==admin",
+      ...options,
+    });
     return debug.log("Create Book", response);
   } catch (error) {
     return debug.error("Create Book", error);
@@ -238,16 +284,29 @@ export async function createBook(data: any, options = {}) {
 
 export async function updateBook(id: string, data: any, options = {}) {
   try {
-    const response = await bookApi.update(id, formatBookData(data), options);
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response = await bookApi.update(id, formatBookData(data), {
+      // session: auth.session,
+      // permissions: "{role}==admin",
+      ...options,
+    });
     return debug.log("Update Book", response);
   } catch (error) {
     return debug.error("Update Book", error);
   }
 }
 
-export async function getBooks(options = { sort: "-created_at", filter: "is_deleted:0" }) {
+export async function getBooks(options = {}) {
+  const defaultOptions = { sort: "-created_at", filter: "is_deleted:0" };
   try {
-    const response: any = await bookApi.getAll(options);
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response: any = await bookApi.getAll({
+      ...defaultOptions,
+      // session: auth.session,
+      ...options,
+    });
     if (!response.err && Array.isArray(response.result)) {
       response.result = response.result.map((book: any) => formatBookData(book));
     }
@@ -259,9 +318,15 @@ export async function getBooks(options = { sort: "-created_at", filter: "is_dele
 
 export async function getBook(id: string, options = {}) {
   try {
-    const response: any = await bookApi.getOne(id, options);
-    if (!response.err && Array.isArray(response.result)) {
-      response.result = response.result.map((book: any) => formatBookData(book));
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response: any = await bookApi.getOne(id, {
+      filter: "is_deleted:0",
+      // session: auth.session,
+      ...options,
+    });
+    if (!response.err && response.result) {
+      response.result = formatBookData(response.result);
     }
     return debug.log("Get Book", response);
   } catch (error) {
@@ -271,7 +336,17 @@ export async function getBook(id: string, options = {}) {
 
 export async function deleteBook(id: string, options = {}) {
   try {
-    const response = await bookApi.update(id, { is_deleted: 1 }, options);
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response = await bookApi.update(
+      id,
+      { is_deleted: 1 },
+      {
+        // session: auth.session,
+        // permissions: "{role}==admin",
+        ...options,
+      }
+    );
     return debug.log("Delete Book", response);
   } catch (error) {
     return debug.error("Delete Book", error);
@@ -281,7 +356,12 @@ export async function deleteBook(id: string, options = {}) {
 // Settings Actions
 export async function getSettings(options = {}) {
   try {
-    const response: any = await settingsApi.getAll(options);
+    // const auth = store.auth.get();
+    // if (!auth.session) throw new Error("No session found");
+    const response: any = await settingsApi.getAll({
+      // session: auth.session,
+      ...options,
+    });
     return debug.log("Get Settings", response);
   } catch (error) {
     return debug.error("Get Settings", error);

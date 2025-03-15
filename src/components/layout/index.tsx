@@ -66,7 +66,7 @@ export const Layout: FC<LayoutProps> = ({
           )}
         >
           <main
-            className="flex-1 py-6 overflow-y-auto"
+            className="flex-1 overflow-y-auto"
             style={{
               // Add padding for bottom tabs on mobile
               paddingBottom: showBottomTabs ? "80px" : undefined,
