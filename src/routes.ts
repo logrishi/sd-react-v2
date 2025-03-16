@@ -138,6 +138,7 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       headerTitle: "Dashboard",
+      headerRightIcons: ["theme", "notifications"],
     },
   },
   {
@@ -148,6 +149,7 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       headerTitle: "Add Book",
+      headerRightIcons: ["theme", "notifications"],
     },
   },
   {
@@ -158,6 +160,7 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       headerTitle: "Edit Book",
+      headerRightIcons: ["theme", "notifications"],
     },
   },
   {
@@ -168,6 +171,7 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       headerTitle: "Manage Books",
+      headerRightIcons: ["theme", "notifications"],
     },
   },
   {
@@ -178,6 +182,7 @@ export const routes: RouteConfig[] = [
     isLazy: true,
     layoutProps: {
       headerTitle: "Manage Users",
+      headerRightIcons: ["theme", "notifications"],
     },
   },
 ];

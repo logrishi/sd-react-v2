@@ -45,8 +45,8 @@ const createRouter = (routes: RouteConfig[]) => {
     {
       path: "/",
       element: createElement("div", null, [
-        createElement(ScrollRestoration),
-        createElement(Outlet),
+        createElement(ScrollRestoration, { key: "scroll-restoration" }),
+        createElement(Outlet, { key: "outlet" }),
       ]),
       children: routes.map(({ path, component, auth: requiresAuth, adminOnly, isLazy, layoutProps }) => {
         const LoadedComponent = isLazy ? withLazyLoading(component) : (component() as unknown as FC);

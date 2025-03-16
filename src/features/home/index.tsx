@@ -39,7 +39,7 @@ const Home: FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Book[]>([]);
   const debouncedSearch = useDebounce(searchQuery, 800);
-  
+
   // Initialize selectedCategory with the first category from settings
   const defaultCategory = store.appSettings.get().categories[0];
   const selectedCategory = store.library.get().selectedCategory || defaultCategory;
@@ -314,7 +314,7 @@ const Home: FC = () => {
               </Card>
             ) : selectedCategory === "Audio Stories" ? (
               <div>
-                {!showFreeOnly ? (
+                {!showFreeOnly && (!isLoggedIn || !isSubscribed || isSubscriptionExpired) && (
                   <Card className="p-6 mb-4">
                     <AccessMessage
                       isLoggedIn={isLoggedIn}
@@ -323,7 +323,7 @@ const Home: FC = () => {
                       showFreeOnly={showFreeOnly}
                     />
                   </Card>
-                ) : null}
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {displayedBooks.map((book) => {
                     const { canAccess } = checkAccess(book.is_free);

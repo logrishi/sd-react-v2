@@ -1,9 +1,10 @@
+import { hashPassword, sendToNative } from "@/lib/utils/utils";
+
 import Api from "./api";
 import { axios } from "@/lib/vendors";
+import { checkSubscriptionStatus } from "@/lib/utils/session";
 import { compressImage } from "@/lib/utils/image-compression";
 import { formatBookData } from "@/lib/utils/text-utils";
-import { hashPassword, sendToNative } from "@/lib/utils/utils";
-import { checkSubscriptionStatus } from "@/lib/utils/session";
 import { store } from "@/services/store";
 
 // Debug utility
@@ -33,12 +34,13 @@ const settingsApi = Api.resource("settings");
 
 export async function getUsers(options = {}) {
   try {
-    // const auth = store.auth.get();
-    // if (!auth?.session) throw new Error("Unauthorized");
+    const auth = store.auth.get();
+    if (!auth?.session) throw new Error("Unauthorized");
+
     const response = await userApi.getAll({
       filter: "is_deleted:0",
-      // permissions: "{is_admin}==1",
-      // session: auth.session,
+      session: auth.session,
+      permissions: "is_admin==1", // This ensures user can only access their own data
       ...options,
     });
     return debug.log("Get Users", response);
@@ -49,12 +51,12 @@ export async function getUsers(options = {}) {
 
 export async function getUserDetails(id: string, options = {}) {
   try {
-    // const auth = store.auth.get();
-    // if (!auth?.session) throw new Error("Unauthorized");
+    const auth = store.auth.get();
+    if (!auth?.session) throw new Error("Unauthorized");
     const response = await userApi.getOne(id, {
       filter: "is_deleted:0",
-      // permissions: auth.isAdmin ? "{role}==admin" : "{id}=={user.id}",
-      // session: auth.session,
+      session: auth.session,
+      permissions: "{id}=={id}", // This ensures user can only access their own data
       ...options,
     });
     return debug.log("Get User Details", response);
@@ -65,11 +67,11 @@ export async function getUserDetails(id: string, options = {}) {
 
 export async function updateUser(id: string, data: any, options = {}) {
   try {
-    // const auth = store.auth.get();
-    // if (!auth?.session) throw new Error("Unauthorized");
+    const auth = store.auth.get();
+    if (!auth?.session) throw new Error("Unauthorized");
     const response = await userApi.update(id, data as Partial<any>, {
-      // session: auth.session,
-      // permissions: auth.isAdmin ? "{role}==admin" : "{id}=={user.id}",
+      session: auth.session,
+      permissions: "{id}=={id}", // This ensures user can only update their own data
       filter: "is_deleted:0",
       ...options,
     });
@@ -269,11 +271,11 @@ export async function checkForceFlags(userId: string, options = {}) {
 // Book Actions
 export async function createBook(data: any, options = {}) {
   try {
-    // const auth = store.auth.get();
-    // if (!auth.session) throw new Error("No session found");
+    const auth = store.auth.get();
+    if (!auth?.session) throw new Error("No session found");
     const response = await bookApi.create(formatBookData(data), {
-      // session: auth.session,
-      // permissions: "{role}==admin",
+      session: auth.session,
+      permissions: "{id}=={id}", // This ensures user can only create data for themselves
       ...options,
     });
     return debug.log("Create Book", response);
