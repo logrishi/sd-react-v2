@@ -13,13 +13,16 @@ export const store = {
     forcePasswordReset: false,
     forceLogout: false,
     lastLogin: null,
+    loginDeviceId: null,
+    previousDeviceId: null,
+    deviceToken: null,
     persist: true,
   },
 
   library: {
     books: [],
     searchQuery: "",
-    selectedCategory: "all",
+    selectedCategory: "",
     showFreeOnly: false,
   },
 
@@ -76,10 +79,6 @@ export const store = {
   },
   buildVersion: {
     buildVersion: "",
-    persist: true,
-  },
-  deviceToken: {
-    deviceToken: "",
     persist: true,
   },
 

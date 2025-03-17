@@ -1,340 +1,194 @@
-// import { useEffect, useCallback, useRef } from "@/lib/vendors";
-// import { useNavigate } from "@/lib/vendors";
-// import { store } from "@/services/store";
-// import { USER_DETAILS_FIELDS } from "@/services/backend/actions";
-// import {
-//   handleLogout,
-//   getUserDetails,
-//   checkUserExists,
-//   login,
-//   handleLoginSuccess,
-//   updateUser,
-// } from "@/services/backend/actions";
+import {
+  MAX_RETRIES,
+  NETWORK_RETRY_DELAY,
+  SECURITY_CHECK_INTERVAL,
+  SESSION_EXPIRY_TIME,
+  SESSION_REFRESH_INTERVAL,
+  checkSecurityFlags,
+  formatSessionTimeRemaining,
+} from "@/lib/utils/session";
+import {
+  USER_FIELDS,
+  checkUserExists,
+  getUserFullDetails,
+  handleLoginSuccess,
+  handleLogout,
+  login,
+  updateUser,
+} from "@/services/backend/actions";
+import { useCallback, useEffect, useRef } from "@/lib/vendors";
 
-// // Types
-// interface StoreUser {
-//   id: string;
-//   email: string;
-//   name: string;
-//   image: string;
-//   password: string;
-// }
+import { store } from "@/services/store";
+import { useNavigate } from "@/lib/vendors";
 
-// // Extended user interface for API responses
-// interface User extends StoreUser {
-//   expiry_date?: string;
-//   is_admin?: boolean;
-//   is_deleted?: boolean;
-//   force_logout?: boolean;
-//   force_password_reset?: boolean;
-//   last_login?: string;
-//   login_device_id?: string;
-//   device_token?: string;
-// }
+// Define extended user type with login_device_id
+interface ExtendedUser {
+  id: string;
+  email: string;
+  name: string;
+  image: string;
+  password: string;
+  login_device_id?: string;
+}
 
-// interface AuthState {
-//   isLoggedIn: boolean;
-//   user: StoreUser | undefined;
-//   session: null;
-//   isSubscribed: boolean;
-//   isSubscriptionExpired: boolean;
-//   expiryDate: null;
-//   isAdmin: boolean;
-//   isDeleted: boolean;
-//   updatePassword: boolean;
-//   forcePasswordReset: boolean;
-//   forceLogout: boolean;
-//   lastLogin: null;
-// }
+// Session check hook for handling session refresh and security checks
+export function useSessionCheck(options?: { checkInterval?: number }) {
+  const navigate = useNavigate();
+  const { isLoggedIn, user, lastLogin, loginDeviceId, deviceToken } = store.auth.get();
 
-// interface SessionCheckState {
-//   isRetrying: boolean;
-//   lastSuccessfulCheck: Date | null;
-//   retryCount: number;
-//   loginDeviceId: string;
-//   deviceToken: string;
-// }
+  // Use provided check interval or default
+  const checkInterval = options?.checkInterval || SESSION_REFRESH_INTERVAL;
 
-// // Constants for intervals and timeouts
-// const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
-// const SESSION_EXPIRY_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
-// const NETWORK_RETRY_DELAY = 5000; // 5 seconds
-// const MAX_RETRIES = 3;
+  // Maintain session check state
+  const sessionState = useRef({
+    isRetrying: false,
+    lastSuccessfulCheck: null,
+    retryCount: 0,
+  });
 
-// // Generate a unique device ID
-// const generateDeviceId = (): string => {
-//   const timestamp = Date.now();
-//   const random = Math.random().toString(36).substring(2);
-//   return `${timestamp}-${random}`;
-// };
+  // Function to check session status and refresh if needed
+  const checkStatus = useCallback(
+    async (shouldUpdateDevice = false) => {
+      try {
+        if (!isLoggedIn || !user) {
+          console.log("🛑 Session check: No user logged in");
+          return;
+        }
 
-// // Check subscription status based on expiry date and soft delete status
-// const checkSubscriptionStatus = (
-//   expiryDate: string | null | undefined,
-//   isDeleted: boolean = false
-// ): { isSubscribed: boolean; isSubscriptionExpired: boolean } => {
-//   // Per memory requirement - if user is soft deleted, they have no subscription
-//   if (isDeleted) {
-//     return { isSubscribed: false, isSubscriptionExpired: true };
-//   }
+        console.log("🔄 Session refresh check");
 
-//   if (!expiryDate) {
-//     return { isSubscribed: false, isSubscriptionExpired: false };
-//   }
+        // Check if user still exists and get latest data
+        const userResponse = await checkUserExists(user.email, {
+          fields: "id, email, password, login_device_id, force_logout, force_password_reset, device_token",
+        });
 
-//   const currentDate = new Date();
-//   const expiry = new Date(expiryDate);
-//   const isExpired = currentDate > expiry;
+        if (!userResponse?.result?.length) {
+          console.error("⛔ User not found or soft deleted");
+          handleLogout();
+          navigate("/login", { replace: true });
+          return;
+        }
 
-//   return {
-//     isSubscribed: !isExpired,
-//     isSubscriptionExpired: isExpired,
-//   };
-// };
+        const userData = userResponse.result[0];
 
-// const useSessionCheck = (): void => {
-//   const navigate = useNavigate();
-//   const { isLoggedIn, user } = store.auth.get() as unknown as AuthState;
+        // Handle force logout
+        if (userData.force_logout) {
+          console.log("🚪 Force logout detected");
+          await updateUser(userData.id, { force_logout: 0 });
+          handleLogout();
+          navigate("/login", { replace: true });
+          return;
+        }
 
-//   // Maintain session check state
-//   const sessionState = useRef<SessionCheckState>({
-//     isRetrying: false,
-//     lastSuccessfulCheck: null,
-//     retryCount: 0,
-//     loginDeviceId: generateDeviceId(),
-//     deviceToken: "",
-//   });
+        // Handle force password reset
+        if (userData.force_password_reset) {
+          console.log("🔑 Force password reset detected");
+          store.auth.set({
+            ...store.auth.get(),
+            forcePasswordReset: true,
+          });
+          await updateUser(userData.id, { force_password_reset: 0 });
+          navigate("/password-reset", { replace: true });
+          return;
+        }
 
-//   // Check session and force flags - ensure single instance of session check through RootLayout
-//   const checkStatus = useCallback(
-//     async (isFullCheck = false): Promise<void> => {
-//       try {
-//         // Safety check for user and online status
-//         if (!isLoggedIn || !user) {
-//           handleLogout();
-//           navigate("/login", { replace: true });
-//           return;
-//         }
+        // Check if current device ID matches the one in the database
+        const storedDeviceId = userData.login_device_id;
+        const currentDeviceId = loginDeviceId || ""; // Ensure it's at least an empty string
 
-//         if (navigator.onLine) {
-//           sessionState.current.retryCount = 0;
-//         }
+        // If device IDs don't match, this device has been logged out by another login
+        if (storedDeviceId && currentDeviceId && storedDeviceId !== currentDeviceId) {
+          console.log("🔒 This device has been logged out by a login from another device");
+          handleLogout();
+          navigate("/login", { replace: true });
+          return;
+        }
 
-//         // Ensure we have complete user credentials
-//         if (!user?.email || !user?.id) {
-//           console.error("Missing user credentials");
-//           handleLogout();
-//           navigate("/login", { replace: true });
-//           return;
-//         }
+        // Re-login to refresh token and ensure device ID is current
+        const loginResponse = await login(
+          { email: user.email, password: user.password },
+          { fields: "id" }, // Only need ID for authentication
+          currentDeviceId,
+          deviceToken
+        );
 
-//         // Step 1: Check if user exists and is not deleted (filtered by is_deleted:0)
-//         const existingUser = await checkUserExists(user.email, {
-//           fields: USER_DETAILS_FIELDS
-//         });
+        if (loginResponse.err) {
+          console.error("❌ Session refresh failed:", loginResponse.err);
+          handleLogout();
+          navigate("/login", { replace: true });
+          return;
+        }
 
-//         if (!existingUser?.result?.length) {
-//           console.error("User not found or soft deleted");
-//           handleLogout();
-//           navigate("/login", { replace: true });
-//           return;
-//         }
+        // Update auth store with refreshed data - properly await it
+        const userDetailsResult = await handleLoginSuccess(loginResponse);
+        if (!userDetailsResult.success) {
+          console.error("❌ Session refresh failed: Could not get user details");
+          handleLogout();
+          navigate("/login", { replace: true });
+          return;
+        }
+        console.log("✅ Session refreshed successfully");
+      } catch (error: any) {
+        console.error("❌ Error checking session status:", error);
 
-//         // Update store with user details from API
-//         const existingUserData = existingUser.result[0];
-//         store.auth.set({
-//           ...store.auth.get(),
-//           user: {
-//             id: existingUserData.id,
-//             name: existingUserData.name || "",
-//             email: existingUserData.email,
-//             image: existingUserData.image || "",
-//             password: ""
-//           },
-//           isAdmin: Boolean(existingUserData.is_admin),
-//           isDeleted: Boolean(existingUserData.is_deleted),
-//           forcePasswordReset: Boolean(existingUserData.force_password_reset),
-//           forceLogout: Boolean(existingUserData.force_logout)
-//         });
+        // Handle network errors with retry logic
+        if (!navigator.onLine || (error.message && error.message.includes("network"))) {
+          console.log("🔄 Network issue, will retry soon...");
+          sessionState.current.isRetrying = true;
+          if (sessionState.current.retryCount < MAX_RETRIES) {
+            sessionState.current.retryCount++;
+            setTimeout(() => checkStatus(false), NETWORK_RETRY_DELAY * sessionState.current.retryCount);
+            return;
+          }
+        }
 
-//         // Step 2: Refresh login session to prevent expiry
-//         const loginResponse = await login(
-//           { email: user.email, password: user.password },
-//           { fields: USER_DETAILS_FIELDS }
-//         );
+        if (isLoggedIn) {
+          handleLogout();
+          navigate("/login", { replace: true });
+        }
+      }
+    },
+    [navigate, isLoggedIn, user, loginDeviceId, deviceToken]
+  );
 
-//         if (loginResponse.err) {
-//           console.error("Login refresh failed");
-//           handleLogout();
-//           navigate("/login", { replace: true });
-//           return;
-//         }
+  // Set up security check interval
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
 
-//         // Step 3: Update session state with login response and get full user details
-//         const { success } = await handleLoginSuccess(loginResponse, sessionState.current.loginDeviceId);
-//         if (!success) {
-//           console.error("Failed to update session state");
-//           handleLogout();
-//           navigate("/login", { replace: true });
-//           return;
-//         }
+    // Initial security check
+    checkSecurityFlags(navigate);
 
-//         // Get user data from store after handleLoginSuccess updates it
-//         const { user: userData } = store.auth.get() as AuthState;
-//         if (!userData) {
-//           console.error("User data not found in store");
-//           handleLogout();
-//           navigate("/login", { replace: true });
-//           return;
-//         }
+    // Set up security check interval
+    const securityInterval = setInterval(() => {
+      console.log("🔒 Running security flag check");
+      checkSecurityFlags(navigate);
+    }, SECURITY_CHECK_INTERVAL);
 
-//         // Cast userData to User type for proper type checking
-//         const userDetails = userData as User;
+    return () => clearInterval(securityInterval);
+  }, [navigate, isLoggedIn, user]);
 
-//         // Handle concurrent sessions - ensure single instance of session check
-//         if (userDetails.login_device_id && userDetails.login_device_id !== sessionState.current.loginDeviceId) {
-//           console.warn("Session active on another device");
-//           handleLogout();
-//           navigate("/login", { replace: true, state: { reason: "concurrent_session" } });
-//           return;
-//         }
+  // Set up session refresh interval
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
 
-//         // Check session expiry if it's a full check
-//         if (isFullCheck && userDetails.last_login) {
-//           const lastLogin = new Date(userDetails.last_login).getTime();
-//           const currentTime = new Date().getTime();
-//           if (currentTime - lastLogin > SESSION_EXPIRY_INTERVAL) {
-//             console.warn("Session expired");
-//             handleLogout();
-//             navigate("/login", { replace: true, state: { reason: "session_expired" } });
-//             return;
-//           }
-//         }
+    // Log session refresh configuration
+    console.group("🔄 Session Auto-Refresh Configuration");
+    console.log(`Mode: ${SESSION_REFRESH_INTERVAL === 15 * 1000 ? "TEST MODE ⚡" : "PRODUCTION MODE 🔒"}`);
+    console.log(`Session expires after: ${SESSION_EXPIRY_TIME / 1000} seconds`);
+    console.log(`Will refresh every: ${checkInterval / 1000} seconds`);
+    console.log(`Security checks every: ${SECURITY_CHECK_INTERVAL / 1000} seconds`);
+    console.groupEnd();
 
-//         // Handle force password reset
-//         if (userDetails.force_password_reset) {
-//           store.auth.set({ forcePasswordReset: true });
-//           await updateUser(userDetails.id, { force_password_reset: 0 });
-//           navigate("/password-reset", { replace: true });
-//           return;
-//         }
+    // Initial check
+    checkStatus(true);
 
-//         // Handle force logout
-//         if (userDetails.force_logout) {
-//           await updateUser(userDetails.id, { force_logout: 0 });
-//           handleLogout();
-//           navigate("/login", { replace: true });
-//           return;
-//         }
+    // Set up periodic check
+    const interval = setInterval(() => {
+      checkStatus(true);
+    }, checkInterval);
 
-//         // Update device ID and last login silently
-//         await updateUser(userData.id, {
-//           login_device_id: sessionState.current.loginDeviceId,
-//           last_login: new Date().toISOString(),
-//         });
+    return () => clearInterval(interval);
+  }, [checkStatus, checkInterval, isLoggedIn, user]);
 
-//         // Check subscription status
-//         const { isSubscribed, isSubscriptionExpired } = checkSubscriptionStatus(
-//           (userData as User).expiry_date || null,
-//           Boolean((userData as User).is_deleted || false)
-//         );
-
-//         // Update store with critical flags
-//         const currentState = store.auth.get() as unknown as AuthState;
-//         // Ensure we maintain session integrity and proper user state management
-//         store.auth.set({
-//           isLoggedIn: currentState.isLoggedIn,
-//           user: userData
-//             ? {
-//                 id: userData.id,
-//                 name: userData.name || "",
-//                 email: userData.email,
-//                 image: userData.image || "",
-//                 password: "",
-//               }
-//             : undefined,
-//           session: null,
-//           isSubscribed,
-//           isSubscriptionExpired,
-//           expiryDate: null,
-//           isAdmin: Boolean((userData as User).is_admin),
-//           isDeleted: Boolean((userData as User).is_deleted),
-//           updatePassword: false,
-//           forcePasswordReset: Boolean((userData as User).force_password_reset),
-//           forceLogout: Boolean((userData as User).force_logout),
-//           lastLogin: null,
-//         });
-
-//         // Update session state
-//         sessionState.current.lastSuccessfulCheck = new Date();
-//         sessionState.current.isRetrying = false;
-//         sessionState.current.retryCount = 0;
-//       } catch (error: unknown) {
-//         const err = error as Error;
-//         console.error("Error checking session status:", err);
-
-//         // Handle network errors with retry logic
-//         if (!navigator.onLine || (err.message && err.message.includes("network"))) {
-//           sessionState.current.isRetrying = true;
-//           if (sessionState.current.retryCount < MAX_RETRIES) {
-//             sessionState.current.retryCount++;
-//             setTimeout(() => void checkStatus(false), NETWORK_RETRY_DELAY * sessionState.current.retryCount);
-//             return;
-//           }
-//         }
-
-//         handleLogout();
-//         navigate("/login", { replace: true });
-//       }
-//     },
-//     [navigate, user]
-//   );
-
-//   // Handle network status changes
-//   const handleNetworkChange = useCallback(() => {
-//     if (navigator.onLine && isLoggedIn && user && sessionState.current.isRetrying) {
-//       void checkStatus(false); // Retry check when network is restored
-//     }
-//   }, [checkStatus]);
-
-//   // Handle tab visibility changes
-//   const handleVisibilityChange = useCallback(() => {
-//     if (document.visibilityState === "visible") {
-//       void checkStatus(false);
-//     }
-//   }, [checkStatus]);
-
-//   // Set up network status and visibility listeners
-//   useEffect(() => {
-//     // Only set up listeners if user is logged in
-//     if (!isLoggedIn || !user) return;
-
-//     window.addEventListener("online", handleNetworkChange);
-//     window.addEventListener("offline", handleNetworkChange);
-//     document.addEventListener("visibilitychange", handleVisibilityChange);
-
-//     return () => {
-//       window.removeEventListener("online", handleNetworkChange);
-//       window.removeEventListener("offline", handleNetworkChange);
-//       document.removeEventListener("visibilitychange", handleVisibilityChange);
-//     };
-//   }, [handleNetworkChange, handleVisibilityChange, isLoggedIn, user]);
-
-//   // Initial check and periodic checks
-//   useEffect(() => {
-//     // Only run checks if user is logged in
-//     if (!isLoggedIn || !user) return;
-
-//     void checkStatus(true);
-
-//     const lightCheckInterval = setInterval(() => void checkStatus(false), CHECK_INTERVAL);
-//     const fullCheckInterval = setInterval(() => void checkStatus(true), SESSION_EXPIRY_INTERVAL);
-
-//     return () => {
-//       clearInterval(lightCheckInterval);
-//       clearInterval(fullCheckInterval);
-//     };
-//   }, [checkStatus, isLoggedIn, user]);
-// };
-
-// export default useSessionCheck;
+  return { checkStatus };
+}

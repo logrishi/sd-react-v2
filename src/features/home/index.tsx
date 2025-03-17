@@ -31,7 +31,7 @@ interface Book {
 }
 
 const Home: FC = () => {
-  const { books, showFreeOnly = false } = store.library();
+  const { books, showFreeOnly = false, selectedCategory } = store.library();
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -40,9 +40,12 @@ const Home: FC = () => {
   const [searchResults, setSearchResults] = useState<Book[]>([]);
   const debouncedSearch = useDebounce(searchQuery, 800);
 
-  // Initialize selectedCategory with the first category from settings
-  const defaultCategory = store.appSettings.get().categories[0];
-  const selectedCategory = store.library.get().selectedCategory || defaultCategory;
+  // Get categories from settings
+  const categories = store.appSettings.get().categories;
+
+  // Use the first category as fallback if selectedCategory is empty
+  const activeCategory = selectedCategory || categories[0] || "";
+
   const { checkAccess } = useAccessControl();
   const navigate = useNavigate();
   const { isLoggedIn, isSubscribed, isSubscriptionExpired } = store.auth.get();
@@ -75,11 +78,20 @@ const Home: FC = () => {
       }
 
       if (!settingsResponse.err && settingsResponse.result?.length > 0) {
-        const categories = settingsResponse.result.find((s: { setting_key: string }) => s.setting_key === "categories");
+        const categoriesSetting = settingsResponse.result.find(
+          (s: { setting_key: string }) => s.setting_key === "categories"
+        );
         const price = settingsResponse.result.find((s: { setting_key: string }) => s.setting_key === "price");
 
+        const newCategories = categoriesSetting?.config || [];
+
+        // Set the first category as default if no category is selected
+        if (!store.library.get().selectedCategory && newCategories.length > 0) {
+          store.library.set({ selectedCategory: newCategories[0] });
+        }
+
         store.appSettings.set({
-          categories: categories?.config || [],
+          categories: newCategories,
           price: price?.value || 0,
         });
       }
@@ -91,10 +103,8 @@ const Home: FC = () => {
   };
 
   useEffect(() => {
-    // Set initial category and fetch data
-    store.library.set({ selectedCategory: defaultCategory });
     fetchData();
-  }, [defaultCategory]);
+  }, []);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -136,7 +146,7 @@ const Home: FC = () => {
   }, [debouncedSearch]);
 
   const handleCategoryChange = (category: string) => {
-    store.library.set({ selectedCategory: category || defaultCategory });
+    store.library.set({ selectedCategory: category });
   };
 
   const toggleFreeFilter = () => {
@@ -159,7 +169,7 @@ const Home: FC = () => {
     const matchesFree = !showFreeOnly || book.is_free;
 
     // Apply category filter
-    const matchesCategory = book?.category === selectedCategory;
+    const matchesCategory = book?.category === activeCategory;
 
     return matchesCategory && matchesFree;
   });
@@ -230,13 +240,13 @@ const Home: FC = () => {
               </div>
             </div>
             <Tabs
-              defaultValue={defaultCategory}
-              value={selectedCategory}
+              defaultValue={categories[0] || ""}
+              value={activeCategory}
               onValueChange={handleCategoryChange}
               className="w-full"
             >
               <TabsList className="w-full justify-start mb-4 bg-transparent">
-                {store.appSettings.get().categories.map((category: string) => (
+                {categories.map((category: string) => (
                   <TabsTrigger
                     key={category}
                     value={category}

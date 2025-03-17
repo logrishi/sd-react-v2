@@ -43,8 +43,8 @@ export async function getUsers(options = {}) {
 
     const response = await userApi.getAll({
       filter: "is_deleted:0",
-      // session: auth.session,
-      // permissions: "is_admin==1", // This ensures user can only access their own data
+      session: auth.session,
+      permissions: "is_admin==1", // This ensures user can only access their own data
       ...options,
     });
     return debug.log("Get Users", response);
@@ -59,8 +59,8 @@ export async function getUserDetails(id: string, options = {}) {
     if (!auth?.session) throw new Error("Unauthorized");
     const response = await userApi.getOne(id, {
       filter: "is_deleted:0",
-      // session: auth.session,
-      // permissions: "{id}=={id}", // This ensures user can only access their own data
+      session: auth.session,
+      permissions: "{id}=={id}", // This ensures user can only access their own data
       ...options,
     });
     return debug.log("Get User Details", response);
@@ -74,8 +74,8 @@ export async function updateUser(id: string, data: any, options = {}) {
     const auth = store.auth.get();
     if (!auth?.session) throw new Error("Unauthorized");
     const response = await userApi.update(id, data as Partial<any>, {
-      // session: auth.session,
-      // permissions: "{id}=={id}", // This ensures user can only update their own data
+      session: auth.session,
+      permissions: "{id}=={id}", // This ensures user can only update their own data
       filter: "is_deleted:0",
       ...options,
     });
@@ -167,7 +167,7 @@ export async function getUserFullDetails(userId: string, session: any) {
     return { success: true };
   } catch (error) {
     console.error("Error getting user details:", error);
-    return { success: false, error: "Failed to get user details" };
+    return { success: false, error: "Error getting user details" };
   }
 }
 
@@ -196,14 +196,14 @@ export function handleLogout() {
 export async function login(
   credentials: { email: string; password: string },
   options = {
-    fields:
-      "id, name, email, image, password, expiry_date, is_admin, is_deleted, update_password, force_logout, force_password_reset,last_login",
+    fields: "id",
   },
   loginDeviceId?: string | null,
   deviceToken?: string | null
 ) {
   try {
     const response = await authApi.check(credentials, options);
+
     if (!response.err) {
       // Generate a new device ID if not provided
       const newLoginDeviceId = loginDeviceId || generateDeviceId();
@@ -263,10 +263,11 @@ export async function signup(
 
     // If no device ID provided, generate one or use the one from the store
     const deviceId = loginDeviceId || store.auth.get().loginDeviceId || generateDeviceId();
-    const dToken = deviceToken || store.auth.get().deviceToken;
+    const token = deviceToken || store.auth.get().deviceToken;
 
     // First create user
-    const createUserResponse = await createUser(userData, options, deviceId, dToken);
+    const createUserResponse = await createUser(userData, options, deviceId, token);
+
     return debug.log("Signup complete", createUserResponse);
   } catch (error) {
     console.error("Signup failed:", error);
@@ -282,8 +283,10 @@ export async function createUser(
 ) {
   try {
     // Check if user exists first
-    const existingUser: any = await checkUserExists(userData.email);
-    if (!existingUser.err && existingUser.result?.length > 0) {
+    const existingUserCheck = await checkUserExists(userData.email, { fields: "id" });
+
+    // If user exists, return error
+    if (existingUserCheck?.result?.length > 0) {
       return { err: true, result: "Email already registered" };
     }
 
@@ -293,8 +296,8 @@ export async function createUser(
     const response = await userApi.create({
       ...userData,
       password: hashedPassword,
-      force_logout: false,
-      force_password_reset: false,
+      force_logout: 0,
+      force_password_reset: 0,
       is_deleted: 0,
     });
 
@@ -305,19 +308,24 @@ export async function createUser(
           email: userData.email,
           password: hashedPassword, // Use hashed password for login
         },
-        { fields: "id" }, // Pass options as the second parameter
+        { fields: "id" }, // Ensure minimal fields for login check
         loginDeviceId,
         deviceToken
       );
 
-      // Explicitly set auth state after signup
-      const userDetailsResult = await handleLoginSuccess(loginResponse);
-      if (!userDetailsResult.success) {
-        console.error("Failed to get user details after signup:", userDetailsResult.error);
+      if (loginResponse.err) {
+        console.error("Failed to login after signup:", loginResponse.err);
         return { err: true, result: "Login failed after signup" };
       }
 
-      // Return properly structured response with auth state flag
+      // Explicitly set auth state after signup
+      const userDetailsResult = await getUserFullDetails(loginResponse.result.id, loginResponse.session);
+      if (!userDetailsResult.success) {
+        console.error("Failed to get user details after signup:", userDetailsResult.error);
+        return { err: true, result: "Failed to set auth state after signup" };
+      }
+
+      // Return properly structured response
       return {
         ...loginResponse,
         auth_state_set: true, // Add flag indicating auth state was set

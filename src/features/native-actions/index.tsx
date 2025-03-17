@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useNavigate } from "@/lib/vendors";
+
+import { sendToNative } from "@/lib/utils/utils";
 import { store } from "@/services/store";
 import { updateUser } from "@/services/backend/actions";
-import { sendToNative } from "@/lib/utils/utils";
 
 const NativeActions = () => {
   const navigate = useNavigate();
@@ -27,7 +28,11 @@ const NativeActions = () => {
       }
 
       if (data.deviceToken) {
-        store.deviceToken.set({ deviceToken: data.deviceToken });
+        const auth = store.auth.get();
+        store.auth.set({
+          ...auth,
+          deviceToken: data.deviceToken,
+        });
       }
 
       if ("isDev" in data && data.isDev !== undefined) {
@@ -65,7 +70,7 @@ const NativeActions = () => {
     [
       store.isNative.get().isNative,
       store.isOtaAvailable.get().isOtaAvailable,
-      store.deviceToken.get().deviceToken,
+      store.auth.get().deviceToken,
       store.isDev.get().isDev,
       store.isUpdateAvailable.set,
       store.applicationVersion.get().applicationVersion,
@@ -83,18 +88,20 @@ const NativeActions = () => {
 
   useEffect(() => {
     const handleUpdateDeviceToken = async () => {
-      const body = { device_token: store.deviceToken.get().deviceToken };
-      const res = await updateUser(store.auth.get().user?.id, body);
+      const auth = store.auth.get();
+      const body = { device_token: auth.deviceToken };
+      const res = await updateUser(auth.user?.id, body);
 
       if (res.err) {
         return;
       }
     };
 
-    if (store.deviceToken.get().deviceToken && store.auth.get().user?.id) {
+    const auth = store.auth.get();
+    if (auth.deviceToken && auth.user?.id) {
       handleUpdateDeviceToken();
     }
-  }, [store.deviceToken.get().deviceToken, store.auth.get().user?.id]);
+  }, [store.auth.get().deviceToken, store.auth.get().user?.id]);
 
   return null;
 };
