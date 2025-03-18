@@ -5,7 +5,7 @@ import { routes, type RouteConfig } from "@/routes";
 import Loading from "@/components/common/loading";
 import ScrollRestoration from "@/components/common/scroll-restoration";
 import { store } from "@/services/store";
-import RootLayout from "@/components/layout/root-layout";
+// import RootLayout from "@/components/layout/root-layout";
 
 // Higher-order component for protected routes
 const withProtection = (Component: FC, requiresAdmin: boolean = false): FC => {

@@ -52,7 +52,7 @@ const Signup: FC = () => {
       });
 
       if (response && !response.err) {
-        const { success } = handleLoginSuccess(response);
+        const { success } = await handleLoginSuccess(response);
         if (success) {
           navigate("/");
         } else {
@@ -162,7 +162,12 @@ const Signup: FC = () => {
 
               <div className="text-center text-xs md:text-sm">
                 Already have an account?{" "}
-                <Button variant="link" className="px-0 text-xs md:text-sm" type="button" onClick={() => navigate("/login")}>
+                <Button
+                  variant="link"
+                  className="px-0 text-xs md:text-sm"
+                  type="button"
+                  onClick={() => navigate("/login")}
+                >
                   Login
                 </Button>
               </div>

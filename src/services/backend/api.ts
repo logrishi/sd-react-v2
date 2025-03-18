@@ -67,14 +67,47 @@ function uniqueKey(input: string): string {
     code = (code << 5) - code + char;
     code &= code;
   }
-  return btoa(code.toString()).substring(0, 8);
+
+  // Custom base64 implementation to match Buffer.toString('base64')
+  const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const codeStr = code.toString();
+  let result = "";
+
+  // Convert string to base64
+  for (let i = 0; i < codeStr.length; i += 3) {
+    const chunk = codeStr.slice(i, i + 3);
+    // Pad with '=' as needed
+    const padding = 3 - chunk.length;
+
+    let bits = 0;
+    for (let j = 0; j < chunk.length; j++) {
+      bits = bits * 10 + parseInt(chunk[j]);
+    }
+
+    const bytes = [(bits >> 16) & 0xff, (bits >> 8) & 0xff, bits & 0xff];
+
+    result += base64Chars[bytes[0] >> 2];
+    result += base64Chars[((bytes[0] & 3) << 4) | (bytes[1] >> 4)];
+
+    if (padding === 2) {
+      result += "==";
+    } else if (padding === 1) {
+      result += base64Chars[((bytes[1] & 15) << 2) | (bytes[2] >> 6)];
+      result += "=";
+    } else {
+      result += base64Chars[((bytes[1] & 15) << 2) | (bytes[2] >> 6)];
+      result += base64Chars[bytes[2] & 63];
+    }
+  }
+
+  return result.substring(0, 8);
 }
 
 //
 // Helper: Build Request Key (exactly like api‑old.ts)
 //
-// For GET requests, if the last segment of the URL is purely numeric,
-// remove it so that different IDs generate the same key if all other conditions match.
+// For all methods, if the last segment of the URL is purely numeric,
+// normalize it to ensure consistent key generation.
 //
 function buildRequestKey(method: HttpMethod, url: string, options: RequestOptions): string {
   if (!LOCAL_HOST) throw new Error("LOCAL_HOST is not defined");
@@ -82,14 +115,15 @@ function buildRequestKey(method: HttpMethod, url: string, options: RequestOption
   const parsedUrl = new URL(_url);
   let pathname = parsedUrl.pathname;
 
-  // For GET requests, remove trailing numeric segment if present.
-  if (method === "get") {
-    const segments = pathname.split("/");
-    const lastSegment = segments[segments.length - 1];
-    if (/^\d+$/.test(lastSegment)) {
-      segments.pop();
-      pathname = segments.join("/") || "/";
-    }
+  // For all endpoints that follow RESTful patterns (/resource/{id}),
+  // normalize by removing the ID segment to ensure consistent key generation
+  const segments = pathname.split("/");
+  const lastSegment = segments[segments.length - 1];
+
+  // Check if the last segment is numeric (an ID) and remove it for key generation
+  if (/^\d+$/.test(lastSegment)) {
+    segments.pop();
+    pathname = segments.join("/") || "/";
   }
 
   // Build request object as in api‑old.ts
@@ -344,7 +378,11 @@ const Api: ApiInterface = {
   }),
   auth: <T>(resourceName: string) => ({
     check: (credentials, options = {}) =>
-      makeRequest<T>("post", buildEndpoint(resourceName), { ...options, body: credentials }),
+      makeRequest<T>("post", buildEndpoint(resourceName), {
+        ...options,
+        body: credentials,
+        cacheOptions: { enabled: false, ...(options.cacheOptions || {}) },
+      }),
   }),
 };
 

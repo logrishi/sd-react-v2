@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useNavigate } from "@/lib/vendors";
+import { useCallback, useEffect, useNavigate, useRef } from "@/lib/vendors";
 
 import { sendToNative } from "@/lib/utils/utils";
 import { store } from "@/services/store";
@@ -6,6 +6,7 @@ import { updateUser } from "@/services/backend/actions";
 
 const NativeActions = () => {
   const navigate = useNavigate();
+  const previousDeviceTokenRef = useRef<string | null>(null);
 
   const handleNativeData = useCallback(
     (message: any) => {
@@ -29,10 +30,13 @@ const NativeActions = () => {
 
       if (data.deviceToken) {
         const auth = store.auth.get();
-        store.auth.set({
-          ...auth,
-          deviceToken: data.deviceToken,
-        });
+        // Only update if the new token is different from existing one
+        if (data.deviceToken && data.deviceToken !== auth.deviceToken) {
+          store.auth.set({
+            ...auth,
+            deviceToken: data.deviceToken,
+          });
+        }
       }
 
       if ("isDev" in data && data.isDev !== undefined) {
@@ -89,16 +93,23 @@ const NativeActions = () => {
   useEffect(() => {
     const handleUpdateDeviceToken = async () => {
       const auth = store.auth.get();
-      const body = { device_token: auth.deviceToken };
-      const res = await updateUser(auth.user?.id, body);
+      const currentDeviceToken = auth.deviceToken;
 
-      if (res.err) {
-        return;
+      // Only update if token has changed since last update
+      if (currentDeviceToken && currentDeviceToken !== previousDeviceTokenRef.current && auth.user?.id) {
+        const body = { device_token: currentDeviceToken };
+        const res = await updateUser(auth.user.id, body);
+
+        if (!res.err) {
+          // Update our ref to avoid unnecessary future updates
+          previousDeviceTokenRef.current = currentDeviceToken;
+        }
       }
     };
 
     const auth = store.auth.get();
-    if (auth.deviceToken && auth.user?.id) {
+    // Only call if deviceToken exists and has changed
+    if (auth.deviceToken && auth.deviceToken !== previousDeviceTokenRef.current && auth.user?.id) {
       handleUpdateDeviceToken();
     }
   }, [store.auth.get().deviceToken, store.auth.get().user?.id]);

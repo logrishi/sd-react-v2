@@ -6,6 +6,7 @@ import { checkSubscriptionStatus } from "@/lib/utils/session";
 import { compressImage } from "@/lib/utils/image-compression";
 import { formatBookData } from "@/lib/utils/text-utils";
 import { store } from "@/services/store";
+import { clearCache } from "./cache";
 
 // Debug utility
 const debug = {
@@ -18,9 +19,52 @@ const debug = {
   },
   error: (message: string, error: any) => {
     console.error(`[ERROR ❌ ] ${message}:`, error);
+
+    // Log errors to a centralized service in production
+    if (window.location.hostname == "saraighatdigital.com") {
+      logErrorToService(message, error);
+    }
+
     throw error;
   },
 };
+
+function logErrorToService(message: string, error: any) {
+  try {
+    // Extract endpoint URL from different possible locations in the error object
+    const endpoint =
+      error?.config?.url || // Standard Axios location
+      error?.request?.url || // Alternative location in some Axios errors
+      error?.response?.config?.url || // Another possible location
+      (error?.request instanceof XMLHttpRequest ? error.request.responseURL : null) || // For XHR requests
+      "unknown-endpoint";
+
+    // Since Sentry is already configured, use it directly
+    // Ensure we capture the API context with the error
+    import("@sentry/browser")
+      .then((Sentry) => {
+        Sentry.captureException(error, {
+          extra: {
+            context: message,
+            userId: store.auth.get()?.user?.id || "unauthenticated",
+            endpoint,
+            statusCode: error?.response?.status || "unknown-status",
+            timestamp: new Date().toISOString(),
+            // Use isNative state from store instead of user agent detection
+            isNative: store.isNative.get().isNative,
+            isOnline: navigator?.onLine,
+          },
+        });
+      })
+      .catch((sentryError) => {
+        // If Sentry module fails to load, fall back to console
+        console.error("Failed to send error to Sentry:", sentryError);
+      });
+  } catch (loggingError) {
+    // Ensure the logging mechanism itself doesn't throw errors
+    console.error("Error in logging mechanism:", loggingError);
+  }
+}
 
 // Create auth API instance
 const authApi = Api.auth("auth-users");
@@ -29,6 +73,9 @@ const authApi = Api.auth("auth-users");
 const userApi = Api.resource("users");
 const bookApi = Api.resource("products");
 const settingsApi = Api.resource("settings");
+
+// Cache options to disable caching for auth-related calls
+const disableCache = { cacheOptions: { enabled: false } };
 
 // User details fields constant
 export const USER_FIELDS =
@@ -73,7 +120,17 @@ export async function updateUser(id: string, data: any, options = {}) {
   try {
     const auth = store.auth.get();
     if (!auth?.session) throw new Error("Unauthorized");
-    const response = await userApi.update(id, data as Partial<any>, {
+
+    // Create a new data object without modifying the original
+    let updatedData = { ...data };
+    
+    // If device_token is null or empty, remove it from the data
+    if (data && ('device_token' in data) && (!data.device_token || data.device_token === '')) {
+      const { device_token, ...rest } = updatedData;
+      updatedData = rest;
+    }
+
+    const response = await userApi.update(id, updatedData as Partial<any>, {
       // session: auth.session,
       // permissions: "{id}=={id}", // This ensures user can only update their own data
       filter: "is_deleted:0",
@@ -108,6 +165,7 @@ export async function getUserFullDetails(userId: string, session: any) {
       fields: USER_FIELDS,
       filter: "is_deleted:0",
       session: session,
+      ...disableCache,
     });
 
     if (userResponse.err || !userResponse.result) {
@@ -203,19 +261,29 @@ export async function login(
   deviceToken?: string | null
 ) {
   try {
-    const response = await authApi.check(credentials, options);
+    const response = await authApi.check(credentials, { ...options, ...disableCache });
     if (!response.err) {
       // Generate a new device ID if not provided
       const newLoginDeviceId = loginDeviceId || generateDeviceId();
 
-      // Update last_login timestamp, device ID, and reset force_logout flag
-      await userApi.update(response.result.id, {
+      // Prepare update data
+      const updateData: any = {
         last_login: new Date().toISOString(),
         login_device_id: newLoginDeviceId,
         force_logout: 0, // Always reset force_logout flag on successful login
-        // Store device token if provided
-        ...(deviceToken ? { device_token: deviceToken } : {}),
-      });
+      };
+      
+      // Only add device token if it exists
+      if (deviceToken) {
+        updateData.device_token = deviceToken;
+      }
+
+      // Update last_login timestamp, device ID, and reset force_logout flag
+      await userApi.update(
+        response.result.id,
+        updateData,
+        disableCache
+      );
 
       // Add device ID to the response
       response.result.login_device_id = newLoginDeviceId;
@@ -245,6 +313,7 @@ export async function checkUserExists(email: string, options = {}) {
       filter: `is_deleted:0`,
       search: `email:${email}`,
       ...options,
+      ...disableCache,
     });
     return debug.log("Check User", response);
   } catch (error: any) {
@@ -265,11 +334,19 @@ export async function signup(
     const deviceId = loginDeviceId || store.auth.get().loginDeviceId || generateDeviceId();
     const dToken = deviceToken || store.auth.get().deviceToken;
 
-    // First create user
-    const createUserResponse = await createUser(userData, options, deviceId, dToken);
+    // First create user with caching disabled
+    const createUserResponse = await createUser(
+      userData, 
+      { ...options, ...disableCache }, 
+      deviceId, 
+      dToken
+    );
+    
     return debug.log("Signup complete", createUserResponse);
   } catch (error) {
     console.error("Signup failed:", error);
+    // Clear out any potentially cached requests to prevent unresponsive buttons
+    clearCache();
     return debug.error("Signup", error);
   }
 }
@@ -281,8 +358,8 @@ export async function createUser(
   deviceToken?: string | null
 ) {
   try {
-    // Check if user exists first
-    const existingUser: any = await checkUserExists(userData.email);
+    // Check if user exists first - with caching disabled
+    const existingUser: any = await checkUserExists(userData.email, disableCache);
     if (!existingUser.err && existingUser.result?.length > 0) {
       return { err: true, result: "Email already registered" };
     }
@@ -290,22 +367,23 @@ export async function createUser(
     // Hash password before creating user
     const hashedPassword = await hashPassword(userData.password);
 
+    // Create user with caching disabled
     const response = await userApi.create({
       ...userData,
       password: hashedPassword,
       force_logout: false,
       force_password_reset: false,
       is_deleted: 0,
-    });
+    }, { ...options, ...disableCache });
 
     if (!response.err) {
-      // If user creation successful, attempt login
+      // If user creation successful, attempt login - with caching disabled
       const loginResponse = await login(
         {
           email: userData.email,
           password: hashedPassword, // Use hashed password for login
         },
-        { fields: "id" }, // Pass options as the second parameter
+        { fields: "id", ...disableCache }, // Pass options as the second parameter
         loginDeviceId,
         deviceToken
       );
@@ -500,6 +578,10 @@ export async function uploadMedia(file: File, folderName: string) {
       password: import.meta.env.VITE_UPLOAD_PASS,
     },
   });
+  // console.log("data", data);
+  return data;
+}
+
   // console.log("data", data);
   return data;
 }

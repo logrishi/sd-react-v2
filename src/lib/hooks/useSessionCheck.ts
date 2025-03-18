@@ -132,15 +132,15 @@ export function useSessionCheck(options?: { checkInterval?: number }) {
         console.error("❌ Error checking session status:", error);
 
         // Handle network errors with retry logic
-        if (!navigator.onLine || (error.message && error.message.includes("network"))) {
-          console.log("🔄 Network issue, will retry soon...");
-          sessionState.current.isRetrying = true;
-          if (sessionState.current.retryCount < MAX_RETRIES) {
-            sessionState.current.retryCount++;
-            setTimeout(() => checkStatus(false), NETWORK_RETRY_DELAY * sessionState.current.retryCount);
-            return;
-          }
-        }
+        // if (!navigator.onLine || (error.message && error.message.includes("network"))) {
+        //   console.log("🔄 Network issue, will retry soon...");
+        //   sessionState.current.isRetrying = true;
+        //   if (sessionState.current.retryCount < MAX_RETRIES) {
+        //     sessionState.current.retryCount++;
+        //     setTimeout(() => checkStatus(false), NETWORK_RETRY_DELAY * sessionState.current.retryCount);
+        //     return;
+        //   }
+        // }
 
         if (isLoggedIn) {
           handleLogout();
