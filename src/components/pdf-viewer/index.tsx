@@ -21,6 +21,7 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1);
+  const [contentWidth, setContentWidth] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [touchDistance, setTouchDistance] = useState<number | null>(null);
 
@@ -33,7 +34,10 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
   // Handle touch events for pinch zoom
   const handleTouchStart = (e: TouchEvent) => {
     if (e.touches.length === 2) {
+      // Prevent default to avoid browser's native zoom
       e.preventDefault();
+      e.stopPropagation();
+      
       const distance = getTouchDistance(e.touches);
       if (distance) {
         setTouchDistance(distance);
@@ -43,11 +47,27 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
 
   const handleTouchMove = (e: TouchEvent) => {
     if (e.touches.length === 2 && touchDistance) {
+      // Prevent default to avoid browser's native zoom
       e.preventDefault();
+      e.stopPropagation();
+      
       const newDistance = getTouchDistance(e.touches);
       if (newDistance) {
-        const scaleDiff = (newDistance - touchDistance) * 0.005; // Reduced sensitivity for smoother zooming
-        setScale((prev) => Math.min(3, Math.max(0.5, prev + scaleDiff))); // Increased max zoom to 300%
+        // Calculate scale difference
+        const scaleDiff = (newDistance - touchDistance) * 0.01; // Increased sensitivity
+        
+        // Update scale with limits
+        setScale((prev) => {
+          const newScale = Math.min(5, Math.max(0.5, prev + scaleDiff)); // Increased max zoom to 500%
+          
+          // Calculate new content width based on scale
+          const newContentWidth = Math.max(width, 320) * newScale * 1.2; // Add 20% extra space
+          setContentWidth(newContentWidth);
+          
+          return newScale;
+        });
+        
+        // Update touch distance for next calculation
         setTouchDistance(newDistance);
       }
     }
@@ -63,8 +83,18 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
+      setContentWidth(0);
     }
   }, [pdfUrl, isOpen]);
+  
+  // Update content width when scale changes
+  useEffect(() => {
+    if (scale > 1) {
+      setContentWidth(Math.max(width, 320) * scale * 1.2); // Add 20% extra space
+    } else {
+      setContentWidth(0); // Reset when at normal scale
+    }
+  }, [scale, width]);
 
   // Cleanup on unmount or dialog close
   useEffect(() => {
@@ -73,7 +103,7 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
     }
   }, [isOpen]);
 
-  // Prevent right-click on iframe
+  // Prevent right-click on iframe and setup touch handlers
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
@@ -81,9 +111,10 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
 
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("touchstart", handleTouchStart as any, { passive: false });
-      container.addEventListener("touchmove", handleTouchMove as any, { passive: false });
-      container.addEventListener("touchend", handleTouchEnd);
+      // Use capture phase to ensure our handlers run first
+      container.addEventListener("touchstart", handleTouchStart as any, { passive: false, capture: true });
+      container.addEventListener("touchmove", handleTouchMove as any, { passive: false, capture: true });
+      container.addEventListener("touchend", handleTouchEnd, { capture: true });
     }
 
     document.addEventListener("contextmenu", handleContextMenu);
@@ -91,12 +122,12 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       if (container) {
-        container.removeEventListener("touchstart", handleTouchStart as any);
-        container.removeEventListener("touchmove", handleTouchMove as any);
-        container.removeEventListener("touchend", handleTouchEnd);
+        container.removeEventListener("touchstart", handleTouchStart as any, { capture: true });
+        container.removeEventListener("touchmove", handleTouchMove as any, { capture: true });
+        container.removeEventListener("touchend", handleTouchEnd, { capture: true });
       }
     };
-  }, [touchDistance]);
+  }, [isOpen]); // Changed dependency to isOpen instead of touchDistance
 
   // Handle keyboard shortcuts that might enable saving
   useEffect(() => {
@@ -158,6 +189,48 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
     setIsLoading(false);
   }
 
+  // Handle viewport meta tag
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // Force viewport to allow zooming
+    const setViewportMeta = () => {
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      if (viewportMeta) {
+        // Store original content for restoration
+        const originalContent = viewportMeta.getAttribute('content') || '';
+        // Set user-scalable=yes
+        viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+        
+        // Return cleanup function
+        return () => {
+          if (viewportMeta) {
+            viewportMeta.setAttribute('content', originalContent);
+          }
+        };
+      } else {
+        // If no viewport meta exists, create one
+        const newViewportMeta = document.createElement('meta');
+        newViewportMeta.setAttribute('name', 'viewport');
+        newViewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+        newViewportMeta.setAttribute('id', 'pdf-viewer-viewport');
+        document.head.appendChild(newViewportMeta);
+        
+        // Return cleanup function
+        return () => {
+          if (document.getElementById('pdf-viewer-viewport')) {
+            document.getElementById('pdf-viewer-viewport')?.remove();
+          }
+        };
+      }
+    };
+    
+    // Set viewport meta and get cleanup function
+    const cleanup = setViewportMeta();
+    
+    return cleanup;
+  }, [isOpen]);
+
   return (
     <Dialog
       open={isOpen}
@@ -170,10 +243,10 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
         }
       }}
     >
-      <DialogContent variant="fullscreen" className="flex flex-col overflow-hidden select-none">
+      <DialogContent variant="fullscreen" className="flex flex-col overflow-hidden select-none" style={{ overscrollBehavior: 'none' }}>
         <DialogTitle></DialogTitle>
         <div
-          className="flex items-center justify-between h-12 px-4 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b z-[100] flex-shrink-0 select-none"
+          className="flex items-center justify-between h-12 px-4 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b z-[100] flex-shrink-0 select-none fixed w-full"
           tabIndex={-1}
         >
           <h2 className="text-sm font-medium truncate">{title || "PDF Viewer"}</h2>
@@ -181,7 +254,7 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/40">
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/40 fixed w-full top-12 z-[99]">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
               Page {currentPage} of {numPages}
@@ -192,7 +265,11 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
+              onClick={() => {
+                setScale((prev) => Math.max(0.5, prev - 0.1));
+                // Reset content width when zooming out to minimum
+                if (scale <= 0.6) setContentWidth(0);
+              }}
               disabled={scale <= 0.5}
             >
               <ZoomOut className="h-4 w-4" />
@@ -202,8 +279,8 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setScale((prev) => Math.min(3, prev + 0.1))}
-              disabled={scale >= 3}
+              onClick={() => setScale((prev) => Math.min(5, prev + 0.1))}
+              disabled={scale >= 5}
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
@@ -217,6 +294,10 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
             scrollbarWidth: "thin",
             scrollbarGutter: "stable",
             overflowX: scale > 1 ? "scroll" : "hidden", // Force horizontal scroll when zoomed
+            overflowY: "scroll",
+            overscrollBehavior: "contain",
+            touchAction: "pan-x pan-y",
+            paddingTop: "6rem", // Increased padding for fixed headers
           }}
           onContextMenu={(e) => e.preventDefault()}
         >
@@ -233,9 +314,16 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
             </div>
           )}
           <div 
-            className="min-w-full h-full relative" 
+            className="h-full relative" 
             style={{
-              width: scale > 1 ? `${Math.max(width * 0.9, 320) * scale + 48}px` : "100%", // Add extra padding for scroll
+              width: contentWidth > 0 ? `${contentWidth}px` : "100%", // Dynamic width based on zoom level
+              minWidth: "100%",
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain',
+              touchAction: 'pan-x pan-y',
+              margin: '0 auto',
+              paddingBottom: "4rem", // Add bottom padding for better scrolling
+              paddingTop: "1rem",
             }}>
             <div 
               className="flex flex-col items-center w-full h-full px-6" 
@@ -244,6 +332,8 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
                 position: "relative",
                 left: scale > 1 ? "50%" : 0,
                 transform: scale > 1 ? "translateX(-50%)" : "none",
+                paddingTop: "1rem",
+                paddingBottom: "4rem",
               }}>
               <Document
                 file={pdfUrl}
@@ -259,7 +349,8 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
                     className="mb-8 shadow-lg pdf-page"
                     style={{
                       marginBottom: index === numPages - 1 ? "calc(100vh - 12rem)" : "2rem",
-                      width: `${Math.max(width * 0.9, 320) * scale}px`,
+                      width: contentWidth > 0 ? `${contentWidth * 0.8}px` : `${Math.max(width * 0.9, 320) * scale}px`,
+                      maxWidth: "100%",
                       transition: "width 0.1s ease-out", // Smooth zoom transitions
                       margin: "0 auto",
                     }}
@@ -269,6 +360,8 @@ const PdfViewer: FC<PdfViewerProps> = ({ pdfUrl, onClose, title, isOpen }) => {
                       width={Math.max(width * 0.9, 320)}
                       scale={scale}
                       className="bg-white"
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
                     />
                   </div>
                 ))}

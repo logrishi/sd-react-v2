@@ -11,7 +11,6 @@ import { getEnvVar } from "@/lib/utils/env-vars";
 import BookSkeleton from "@/features/home/components/book-details-skeleton";
 import { useNavigate } from "react-router-dom";
 import PdfViewer from "@/components/pdf-viewer";
-import { sendToNative } from "@/lib/utils/utils";
 import AccessMessage from "@/components/common/access-message";
 
 interface BookDetails {

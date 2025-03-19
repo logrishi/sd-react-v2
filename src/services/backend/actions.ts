@@ -2,7 +2,7 @@ import { hashPassword, sendToNative } from "@/lib/utils/utils";
 
 import Api from "./api";
 import { axios } from "@/lib/vendors";
-import { checkSubscriptionStatus } from "@/lib/utils/session";
+// import { checkSubscriptionStatus } from "@/lib/utils/session";
 import { compressImage } from "@/lib/utils/image-compression";
 import { formatBookData } from "@/lib/utils/text-utils";
 import { store } from "@/services/store";
@@ -12,9 +12,9 @@ import { clearCache } from "./cache";
 const debug = {
   log: (message: string, data: any) => {
     console.log(`[DEBUG] ${message}:`, data);
-    if (store.isNative.get().isNative) {
-      sendToNative({ type: "debug", message, data });
-    }
+    // if (store.isNative.get().isNative) {
+    //   sendToNative({ type: "debug", message, data });
+    // }
     return data;
   },
   error: (message: string, error: any) => {
@@ -31,40 +31,57 @@ const debug = {
 
 function logErrorToService(message: string, error: any) {
   try {
-    // Extract endpoint URL from different possible locations in the error object
-    const endpoint =
-      error?.config?.url || // Standard Axios location
-      error?.request?.url || // Alternative location in some Axios errors
-      error?.response?.config?.url || // Another possible location
-      (error?.request instanceof XMLHttpRequest ? error.request.responseURL : null) || // For XHR requests
-      "unknown-endpoint";
-
-    // Since Sentry is already configured, use it directly
-    // Ensure we capture the API context with the error
+    // Extract useful information from the error object in a readable format
+    const errorInfo = {
+      // Context of where the error occurred
+      context: message,
+      // Extract endpoint URL from different possible locations
+      endpoint: error?.config?.url || error?.request?.url || error?.response?.config?.url || 
+               (error?.request instanceof XMLHttpRequest ? error.request.responseURL : null) || "unknown-endpoint",
+      // HTTP status code if available
+      statusCode: error?.response?.status || "unknown-status",
+      // Error message
+      errorMessage: error?.message || error?.toString() || "Unknown error",
+      // Response data if available
+      responseData: error?.response?.data || null,
+      // User information
+      userId: store.auth.get()?.user?.id || "unauthenticated",
+      // Environment information
+      isNative: store.isNative.get().isNative,
+      isOnline: navigator?.onLine,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to Sentry with the structured information
     import("@sentry/browser")
       .then((Sentry) => {
         Sentry.captureException(error, {
-          extra: {
-            context: message,
-            userId: store.auth.get()?.user?.id || "unauthenticated",
-            endpoint,
-            statusCode: error?.response?.status || "unknown-status",
-            timestamp: new Date().toISOString(),
-            // Use isNative state from store instead of user agent detection
-            isNative: store.isNative.get().isNative,
-            isOnline: navigator?.onLine,
-          },
+          extra: errorInfo
         });
       })
-      .catch((sentryError) => {
-        // If Sentry module fails to load, fall back to console
-        console.error("Failed to send error to Sentry:", sentryError);
+      .catch(() => {
+        // Silent catch - debug utility will handle any console logging
       });
-  } catch (loggingError) {
-    // Ensure the logging mechanism itself doesn't throw errors
-    console.error("Error in logging mechanism:", loggingError);
+  } catch {
+    // Silent catch - debug utility will handle any console logging
   }
 }
+
+export const checkSubscriptionStatus = (
+  expiryDate: string | null
+): { isSubscribed: boolean; isSubscriptionExpired: boolean } => {
+  if (!expiryDate) {
+    return { isSubscribed: false, isSubscriptionExpired: false };
+  }
+
+  const currentDate = new Date();
+  const expiry = new Date(expiryDate);
+
+  return {
+    isSubscribed: true,
+    isSubscriptionExpired: currentDate > expiry,
+  };
+};
 
 // Create auth API instance
 const authApi = Api.auth("auth-users");
@@ -123,9 +140,9 @@ export async function updateUser(id: string, data: any, options = {}) {
 
     // Create a new data object without modifying the original
     let updatedData = { ...data };
-    
+
     // If device_token is null or empty, remove it from the data
-    if (data && ('device_token' in data) && (!data.device_token || data.device_token === '')) {
+    if (data && "device_token" in data && (!data.device_token || data.device_token === "")) {
       const { device_token, ...rest } = updatedData;
       updatedData = rest;
     }
@@ -272,18 +289,14 @@ export async function login(
         login_device_id: newLoginDeviceId,
         force_logout: 0, // Always reset force_logout flag on successful login
       };
-      
+
       // Only add device token if it exists
       if (deviceToken) {
         updateData.device_token = deviceToken;
       }
 
       // Update last_login timestamp, device ID, and reset force_logout flag
-      await userApi.update(
-        response.result.id,
-        updateData,
-        disableCache
-      );
+      await userApi.update(response.result.id, updateData, disableCache);
 
       // Add device ID to the response
       response.result.login_device_id = newLoginDeviceId;
@@ -335,13 +348,8 @@ export async function signup(
     const dToken = deviceToken || store.auth.get().deviceToken;
 
     // First create user with caching disabled
-    const createUserResponse = await createUser(
-      userData, 
-      { ...options, ...disableCache }, 
-      deviceId, 
-      dToken
-    );
-    
+    const createUserResponse = await createUser(userData, { ...options, ...disableCache }, deviceId, dToken);
+
     return debug.log("Signup complete", createUserResponse);
   } catch (error) {
     console.error("Signup failed:", error);
@@ -368,13 +376,16 @@ export async function createUser(
     const hashedPassword = await hashPassword(userData.password);
 
     // Create user with caching disabled
-    const response = await userApi.create({
-      ...userData,
-      password: hashedPassword,
-      force_logout: false,
-      force_password_reset: false,
-      is_deleted: 0,
-    }, { ...options, ...disableCache });
+    const response = await userApi.create(
+      {
+        ...userData,
+        password: hashedPassword,
+        force_logout: false,
+        force_password_reset: false,
+        is_deleted: 0,
+      },
+      { ...options, ...disableCache }
+    );
 
     if (!response.err) {
       // If user creation successful, attempt login - with caching disabled
@@ -578,10 +589,6 @@ export async function uploadMedia(file: File, folderName: string) {
       password: import.meta.env.VITE_UPLOAD_PASS,
     },
   });
-  // console.log("data", data);
-  return data;
-}
-
   // console.log("data", data);
   return data;
 }

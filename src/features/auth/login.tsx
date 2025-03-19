@@ -7,7 +7,7 @@ import { store } from "@/services/store";
 import { checkUserExists, login, resetPassword, handleLoginSuccess } from "@/services/backend/actions";
 import { Eye, EyeOff, Mail, Lock } from "@/assets/icons";
 import { useState, useEffect } from "react";
-import { comparePassword, hashPassword, sendToNative } from "@/lib/utils/utils";
+import { comparePassword, hashPassword } from "@/lib/utils/utils";
 
 const Login: FC = () => {
   const navigate = useNavigate();
@@ -91,9 +91,6 @@ const Login: FC = () => {
       }
       navigate("/");
     } catch (err: any) {
-      if (store.isNative.get().isNative) {
-        sendToNative({ type: "error", message: err });
-      }
       setError("An error occurred during login");
     } finally {
       setLoading(false);

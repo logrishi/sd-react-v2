@@ -492,12 +492,12 @@ const Profile: FC = () => {
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 w-full"
                 onClick={() => window.open("https://wa.me/" + WHATSAPP_NUMBER, "_blank")}
               >
                 <MessageCircleQuestion className="h-4 w-4" /> Contact on WhatsApp
               </Button>
-              <Button variant="outline" className="gap-2" onClick={handleContactSupport}>
+              <Button variant="outline" className="gap-2 w-full" onClick={handleContactSupport}>
                 <Mail className="h-4 w-4" /> Email Support
               </Button>
             </div>

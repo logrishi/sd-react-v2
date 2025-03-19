@@ -11,7 +11,9 @@ import { IndianRupee, FileText, Headphones, Image, Loader2, Eye } from "@/assets
 import { getEnvVar } from "@/lib/utils/env-vars";
 import { store } from "@/services/store";
 import { createBook, getBook, updateBook, uploadMedia } from "@/services/backend/actions";
+import { clearCache } from "@/services/backend/cache";
 import AudioPlayer from "@/components/common/audio-player";
+import { Toast } from "@/components/common/ui/toast";
 
 interface BookFormData {
   name: string;
@@ -51,6 +53,7 @@ const AddBook: FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showToast, setShowToast] = useState(false);
 
   // Fetch product data if in edit mode
   useEffect(() => {
@@ -68,7 +71,7 @@ const AddBook: FC = () => {
               price: book.price ? String(book.price) : "",
               image: book.image || "",
               book: book.book || "",
-              audio: book.audio || "test.mp3",
+              audio: book.audio || "",
               is_free: !!book.is_free,
               is_deleted: !!book.is_deleted,
             });
@@ -161,6 +164,7 @@ const AddBook: FC = () => {
 
       if (errors.length > 0) {
         setError(`${errors.join(", ")} ${errors.length === 1 ? "is" : "are"} required`);
+        setShowToast(true);
         setLoading(false);
         return;
       }
@@ -179,6 +183,7 @@ const AddBook: FC = () => {
         } catch (error) {
           console.error("Error uploading image:", error);
           setError("Failed to upload image");
+          setShowToast(true);
           setLoading(false);
           return;
         }
@@ -192,6 +197,7 @@ const AddBook: FC = () => {
         } catch (error) {
           console.error("Error uploading book:", error);
           setError("Failed to upload book");
+          setShowToast(true);
           setLoading(false);
           return;
         }
@@ -205,6 +211,7 @@ const AddBook: FC = () => {
         } catch (error) {
           console.error("Error uploading audio:", error);
           setError("Failed to upload audio");
+          setShowToast(true);
           setLoading(false);
           return;
         }
@@ -235,7 +242,11 @@ const AddBook: FC = () => {
         throw new Error(response.err.message || "Failed to save book");
       }
 
+      // Clear cache to ensure fresh data is loaded after adding/updating
+      clearCache("products");
+      
       setSuccess(isEditMode ? "Book updated successfully" : "Book created successfully");
+      setShowToast(true);
 
       // Reset form if creating new product
       if (!isEditMode) {
@@ -265,6 +276,7 @@ const AddBook: FC = () => {
       }, 2000);
     } catch (err: any) {
       setError(err.message || "An error occurred");
+      setShowToast(true);
     } finally {
       setLoading(false);
     }
@@ -272,6 +284,27 @@ const AddBook: FC = () => {
 
   return (
     <div className="container max-w-3xl py-6">
+      {/* Floating toast notifications */}
+      {error && showToast && (
+        <Toast 
+          variant="destructive" 
+          position="topCenter" 
+          onClose={() => setShowToast(false)}
+        >
+          {error}
+        </Toast>
+      )}
+
+      {success && showToast && (
+        <Toast 
+          variant="success" 
+          position="topCenter" 
+          onClose={() => setShowToast(false)}
+        >
+          {success}
+        </Toast>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>{isEditMode ? "Edit Book" : "Add New Book"}</CardTitle>
@@ -281,9 +314,6 @@ const AddBook: FC = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">{error}</div>}
-
-            {success && <div className="bg-success/10 text-success p-3 rounded-md text-sm">{success}</div>}
 
             <div className="space-y-4">
               {/* Name */}
