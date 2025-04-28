@@ -19,10 +19,11 @@ const debug = {
   },
   error: (message: string, error: any) => {
     console.error(`[ERROR ❌ ] ${message}:`, error);
+    sendToNative({ type: "error", message, error });
 
     // Log errors to a centralized service in production
     if (window.location.hostname == "saraighatdigital.com") {
-      logErrorToService(message, error);
+      // logErrorToService(message, error);
     }
 
     throw error;
@@ -107,7 +108,7 @@ export const USER_FIELDS =
 export async function getUsers(options = {}) {
   try {
     const auth = store.auth.get();
-    if (!auth?.session) throw new Error("Unauthorized");
+    // if (!auth?.session) throw new Error("Unauthorized");
 
     const response = await userApi.getAll({
       filter: "is_deleted:0",
@@ -124,7 +125,7 @@ export async function getUsers(options = {}) {
 export async function getUserDetails(id: string, options = {}) {
   try {
     const auth = store.auth.get();
-    if (!auth?.session) throw new Error("Unauthorized");
+    // if (!auth?.session) throw new Error("Unauthorized");
     const response = await userApi.getOne(id, {
       filter: "is_deleted:0",
       // session: auth.session,
@@ -140,7 +141,7 @@ export async function getUserDetails(id: string, options = {}) {
 export async function updateUser(id: string, data: any, options = {}) {
   try {
     const auth = store.auth.get();
-    if (!auth?.session) throw new Error("Unauthorized");
+    // if (!auth?.session) throw new Error("Unauthorized");
 
     // Create a new data object without modifying the original
     let updatedData = { ...data };
@@ -180,12 +181,12 @@ export async function handleLoginSuccess(loginResponse: any) {
 // Function to get complete user details and update store
 export async function getUserFullDetails(userId: string, session: any) {
   try {
-    console.log("Getting user details for:", { userId, session: !!session });
+    console.log("Getting user details for:", { userId });
 
     const userResponse = await userApi.getOne(userId, {
       fields: USER_FIELDS,
       filter: "is_deleted:0",
-      session: session,
+      // session: session,
       ...disableCache,
     });
 
@@ -473,12 +474,13 @@ export async function checkForceFlags(userId: string, options = {}) {
 export async function createBook(data: any, options = {}) {
   try {
     const auth = store.auth.get();
-    if (!auth?.session) throw new Error("No session found");
+    // if (!auth?.session) throw new Error("No session found");
     const response = await bookApi.create(formatBookData(data), {
-      // session: auth.session,
+      // session: auth.session ,
       // permissions: "{id}=={id}", // This ensures user can only create data for themselves
       ...options,
     });
+    sendToNative({ type: "createBook", data: response });
     return debug.log("Create Book", response);
   } catch (error) {
     return debug.error("Create Book", error);

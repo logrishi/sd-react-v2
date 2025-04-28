@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosRequestConfig } from "axios";
 
-export const _DATABASE = "trendingcut_prod";
-export const _BASE_URL = "https://v4.frontql.dev";
-const local_host = "http://localhost:4466";
-const tokens = require("./tokens.json");
+import tokens from "./tokens.json";
+
+export const _DATABASE = import.meta.env.VITE_DATABASE;
+export const _BASE_URL = import.meta.env.VITE_BASE_URL;
+export const local_host = import.meta.env.VITE_FQ_LOCAL_URL;
 
 type HttpMethod = "get" | "post" | "put" | "delete" | "sql";
 
@@ -97,7 +98,7 @@ const makeRequest = async (method: HttpMethod, endpoint: string, options: Reques
   if (permissions) headers.permissions = permissions;
 
   const key = getKey(method, endpoint, options);
-  const token = tokens[key] || false;
+  const token = tokens[key as keyof typeof tokens] || false;
 
   if (!token) {
     headers["key"] = key;

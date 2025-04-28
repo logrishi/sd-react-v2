@@ -68,8 +68,15 @@ const Books: FC = () => {
       setDeleteLoading(id);
       const response = await deleteBook(id);
       if (!response.err) {
-        // Remove from list or mark as deleted
-        setBooks(books.filter((book) => book.id !== id));
+        // Update the book's is_deleted status in the local state instead of removing it
+        setBooks(
+          books.map((book) => {
+            if (book.id === id) {
+              return { ...book, is_deleted: true };
+            }
+            return book;
+          })
+        );
       } else {
         setError("Failed to delete book");
       }
@@ -175,7 +182,8 @@ const Books: FC = () => {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the book.
+                                    This will mark the book as deleted. It will no longer be visible to users but will
+                                    remain in the admin panel.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -188,7 +196,7 @@ const Books: FC = () => {
                                     {deleteLoading === book.id ? (
                                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                     ) : null}
-                                    Delete
+                                    Mark as Deleted
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -291,7 +299,8 @@ const Books: FC = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the book.
+                                This will mark the book as deleted. It will no longer be visible to users but will
+                                remain in the admin panel.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -304,7 +313,7 @@ const Books: FC = () => {
                                 {deleteLoading === book.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin mr-2 text-primary" />
                                 ) : null}
-                                Delete
+                                Mark as Deleted
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
